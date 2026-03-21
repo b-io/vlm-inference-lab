@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vlm_inference_lab"
+version = "0.1.0"
+description = "A compact technical lab exploring inference optimization for multimodal systems."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = {text = "MIT"}
+authors = [
+    {name = "Florian Barras", email = "florian@barras.io"}
+]
+dependencies = []
+
+[tool.setuptools.package-dir]
+vlm_inference_lab = "source/vlm_inference_lab"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["source"]
