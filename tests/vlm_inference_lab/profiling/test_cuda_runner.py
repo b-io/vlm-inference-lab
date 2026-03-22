@@ -2,6 +2,7 @@ import unittest
 import os
 from vlm_inference_lab.profiling.cuda_runner import CudaRunner
 
+
 class TestCudaRunner(unittest.TestCase):
     def setUp(self):
         self.runner = CudaRunner()
@@ -15,6 +16,7 @@ class TestCudaRunner(unittest.TestCase):
     def test_normpath_resource_dir(self):
         # Verify normalization
         self.assertTrue(os.path.isabs(self.runner.resource_dir) or "vlm_inference_lab" in self.runner.resource_dir)
+
 
 if __name__ == "__main__":
     unittest.main()

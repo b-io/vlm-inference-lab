@@ -3,47 +3,69 @@
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-function Normalize-RunpodBaseUrl {
+function Normalize-RunpodBaseUrl
+{
     param([string]$Url)
     $Url = $Url.TrimEnd('/')
-    if ($Url.EndsWith('/v1')) {
+    if ( $Url.EndsWith('/v1'))
+    {
         $Url = $Url.Substring(0, $Url.Length - 3)
     }
     return $Url
 }
 
 $ORIGINAL_URL = $args[0]
-if (-not $ORIGINAL_URL) { Write-Error "Required base_url"; exit 1 }
+if (-not $ORIGINAL_URL)
+{
+    Write-Error "Required base_url"; exit 1
+}
 
 $BASE_URL = Normalize-RunpodBaseUrl $ORIGINAL_URL
 
 $MODEL_ID = $args[1]
-if (-not $MODEL_ID) { Write-Error "Required model_id"; exit 1 }
+if (-not $MODEL_ID)
+{
+    Write-Error "Required model_id"; exit 1
+}
 
-$TIER = if ($args[2]) { $args[2] } else { "smoke" }
+$TIER = if ($args[2])
+{
+    $args[2]
+}
+else
+{
+    "smoke"
+}
 
 $REMAINING_ARGS = @()
-if ($args.Count -gt 3) {
-    $REMAINING_ARGS = $args[3..($args.Count-1)]
+if ($args.Count -gt 3)
+{
+    $REMAINING_ARGS = $args[3..($args.Count - 1)]
 }
 
 # Map tiers to vllm bench serve arguments
 $NUM_REQUESTS = 10
 $CONCURRENCY = 1
 
-if ($TIER -eq "smoke") {
+if ($TIER -eq "smoke")
+{
     $NUM_REQUESTS = 10
     $CONCURRENCY = 1
-} elseif ($TIER -eq "latency") {
+}
+elseif ($TIER -eq "latency")
+{
     $NUM_REQUESTS = 100
     $CONCURRENCY = 1
-} elseif ($TIER -eq "throughput") {
+}
+elseif ($TIER -eq "throughput")
+{
     $NUM_REQUESTS = 200
     $CONCURRENCY = 8
 }
 
 $OUTPUT_DIR = "results/benchmarks/$TIER"
-if (-not (Test-Path $OUTPUT_DIR)) {
+if (-not (Test-Path $OUTPUT_DIR))
+{
     New-Item -ItemType Directory -Force -Path $OUTPUT_DIR | Out-Null
 }
 
@@ -70,7 +92,8 @@ $ENDPOINT = "/v1/completions"
 $BACKEND = "openai"
 
 # Heuristic for chat models
-if ($MODEL_ID -like "*chat*" -or $MODEL_ID -like "*instruct*" -or $MODEL_ID -like "*llama-3*") {
+if ($MODEL_ID -like "*chat*" -or $MODEL_ID -like "*instruct*" -or $MODEL_ID -like "*llama-3*")
+{
     $ENDPOINT = "/v1/chat/completions"
     $BACKEND = "openai-chat"
 }
@@ -87,10 +110,11 @@ $PARAMS = @(
 )
 $PARAMS += $REMAINING_ARGS
 
-Write-Host "Executing: vllm $($PARAMS -join ' ')"
+Write-Host "Executing: vllm $( $PARAMS -join ' ' )"
 vllm @PARAMS
 
-if ($LASTEXITCODE -ne 0) {
+if ($LASTEXITCODE -ne 0)
+{
     Write-Error "vLLM benchmark failed."
     exit $LASTEXITCODE
 }

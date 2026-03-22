@@ -1,19 +1,20 @@
 {
-	"name": "VLM Inference Lab",
-	"build": {
-		"dockerfile": "../docker/Dockerfile"
-	},
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"ms-python.python",
-				"nvidia.nsight-vscode-edition",
-				"ms-vscode.cpptools"
-			]
-		}
-	},
-	"remoteUser": "root",
-	"runArgs": [
-		"--gpus", "all"
-	]
+  "name": "VLM Inference Lab",
+  "build": {
+    "dockerfile": "../docker/Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "nvidia.nsight-vscode-edition",
+        "ms-vscode.cpptools"
+      ]
+    }
+  },
+  "remoteUser": "root",
+  "runArgs": [
+    "--gpus",
+    "all"
+  ]
 }

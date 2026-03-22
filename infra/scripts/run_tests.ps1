@@ -3,7 +3,7 @@
 # Support UTF-8 emojis in PowerShell console
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-$env:PYTHONPATH = "$(Get-Location)\source"
+$env:PYTHONPATH = "$( Get-Location )\source"
 
 # Run pytest
 Write-Host "--------------------------------------------------------"

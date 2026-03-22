@@ -1,6 +1,7 @@
 # Documentation Map and Interview Study Guide
 
 This directory mixes three kinds of material:
+
 - **ML / architecture fundamentals**: how different model families work and when to use them.
 - **Serving / systems notes**: batching, KV cache, benchmarking, GPU bottlenecks.
 - **VLM-specific notes**: multimodal alignment, document understanding, REC, and evaluation.
@@ -8,6 +9,7 @@ This directory mixes three kinds of material:
 ## Recommended study order for this repo
 
 ### 1. Core neural-network architecture tradeoffs
+
 - [Neural architecture tradeoffs](ml/neural_architecture_tradeoffs.md)
 - [Sequential models](ml/sequential_models.md)
 - [RNN, LSTM, GRU, and gradient stability](ml/rnn_lstm_gru_and_gradient_stability.md)
@@ -16,6 +18,7 @@ This directory mixes three kinds of material:
 - [Model selection and use cases](ml/model_selection_and_use_cases.md)
 
 ### 2. Optimization and serving
+
 - [Optimization and backpropagation](ml/optimization_and_backprop.md)
 - [Knowledge distillation](optimization/knowledge_distillation.md)
 - [Pruning and quantization](optimization/pruning_and_quantization.md)
@@ -25,6 +28,7 @@ This directory mixes three kinds of material:
 - [vLLM CLI and SGLang](tools/vllm_cli_and_sglang.md)
 
 ### 3. VLM-specific interview topics
+
 - [VLM basics](vlm/vlm_basics.md)
 - [Embeddings and CLIP-style alignment](vlm/embeddings.md)
 - [Document understanding](vlm/document_understanding.md)
@@ -33,6 +37,7 @@ This directory mixes three kinds of material:
 - [VLM evaluation and SLOs](evaluation/vlm_evaluation_and_slos.md)
 
 ### 4. GPU / kernel / hardware reasoning
+
 - [Inference kernel bottlenecks](cuda/inference_kernel_bottlenecks.md)
 - [CUDA memory model](cuda/cuda_memory_model.md)
 - [Shared vs global memory](cuda/shared_vs_global_memory.md)
@@ -41,6 +46,7 @@ This directory mixes three kinds of material:
 ## Coverage notes
 
 The repo now covers the major architecture families you may need to discuss in interview:
+
 - **MLP / residual MLP**
 - **CNN / ResNet / U-Net / FPN / ViT / Swin**
 - **RNN / LSTM / GRU / temporal CNN / Transformer**

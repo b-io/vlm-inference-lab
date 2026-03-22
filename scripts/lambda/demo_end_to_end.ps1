@@ -5,7 +5,8 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # 1. Load configuration
-if (Test-Path .env.lambda) {
+if (Test-Path .env.lambda)
+{
     # Simple .env parsing for PowerShell (assuming KEY=VALUE format)
     Get-Content .env.lambda | Where-Object { $_ -match '=' -and $_ -notmatch '^#' } | ForEach-Object {
         $name, $value = $_.Split('=', 2)
@@ -13,20 +14,52 @@ if (Test-Path .env.lambda) {
         $value = $value.Trim().Trim('"').Trim("'")
         New-Item -Path "env:\$name" -Value $value -Force | Out-Null
     }
-} else {
+}
+else
+{
     Write-Error "Error: .env.lambda not found. Copy .env.lambda.example and fill it in."
     exit 1
 }
 
 # Required variables check
-if (-not $env:LAMBDA_INSTANCE_IP) { Write-Error "Required LAMBDA_INSTANCE_IP in .env.lambda"; exit 1 }
-if (-not $env:LAMBDA_SSH_USER) { Write-Error "Required LAMBDA_SSH_USER in .env.lambda"; exit 1 }
-if (-not $env:MODEL_ID) { Write-Error "Required MODEL_ID in .env.lambda"; exit 1 }
+if (-not $env:LAMBDA_INSTANCE_IP)
+{
+    Write-Error "Required LAMBDA_INSTANCE_IP in .env.lambda"; exit 1
+}
+if (-not $env:LAMBDA_SSH_USER)
+{
+    Write-Error "Required LAMBDA_SSH_USER in .env.lambda"; exit 1
+}
+if (-not $env:MODEL_ID)
+{
+    Write-Error "Required MODEL_ID in .env.lambda"; exit 1
+}
 
-$REMOTE_HOST = "$($env:LAMBDA_SSH_USER)@$($env:LAMBDA_INSTANCE_IP)"
-$VLLM_PORT = if ($env:VLLM_PORT) { $env:VLLM_PORT } else { 8000 }
-$LAMBDA_SSH_PORT = if ($env:LAMBDA_SSH_PORT) { $env:LAMBDA_SSH_PORT } else { 22 }
-$HF_TOKEN = if ($env:HF_TOKEN) { $env:HF_TOKEN } else { "" }
+$REMOTE_HOST = "$( $env:LAMBDA_SSH_USER )@$( $env:LAMBDA_INSTANCE_IP )"
+$VLLM_PORT = if ($env:VLLM_PORT)
+{
+    $env:VLLM_PORT
+}
+else
+{
+    8000
+}
+$LAMBDA_SSH_PORT = if ($env:LAMBDA_SSH_PORT)
+{
+    $env:LAMBDA_SSH_PORT
+}
+else
+{
+    22
+}
+$HF_TOKEN = if ($env:HF_TOKEN)
+{
+    $env:HF_TOKEN
+}
+else
+{
+    ""
+}
 
 Write-Host "--------------------------------------------------------"
 Write-Host "VLM Inference Lab: Lambda Labs Orchestrator"

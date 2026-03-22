@@ -1,10 +1,12 @@
 # Document Understanding
 
-Document understanding is the multimodal problem of extracting, structuring, and reasoning over document content, where meaning depends on **text**, **layout**, **visual appearance**, and often **multi-page context**.
+Document understanding is the multimodal problem of extracting, structuring, and reasoning over document content, where
+meaning depends on **text**, **layout**, **visual appearance**, and often **multi-page context**.
 
 ## 1. Why document understanding is different
 
 A document is not just plain text. It contains:
+
 - reading order
 - layout regions
 - tables
@@ -15,6 +17,7 @@ A document is not just plain text. It contains:
 A document model therefore needs more than OCR. It needs grounding between content and layout.
 
 ## 2. Core tasks
+
 - **OCR**: recover text from pixels
 - **layout analysis**: detect lines, blocks, tables, figures, forms
 - **key-value extraction**: map fields such as invoice number or total amount
@@ -41,6 +44,7 @@ flowchart TD
 ### 3.1 OCR + NLP pipeline
 
 Pipeline:
+
 1. detect text regions
 2. run OCR
 3. recover reading order and table structure
@@ -80,7 +84,8 @@ A high-resolution vision encoder produces visual tokens or features, which are p
 
 ### Small text and high resolution
 
-If the input resolution is too low, tiny text disappears. If the resolution is high, visual token count and memory usage rise sharply.
+If the input resolution is too low, tiny text disappears. If the resolution is high, visual token count and memory usage
+rise sharply.
 
 ### Reading order is not trivial
 
@@ -93,13 +98,15 @@ Many tasks require information from multiple pages, forms, annexes, or prior sec
 ### Mixed objectives
 
 The model must both **perceive** and **reason**:
+
 - detect text and structure
 - align regions with semantics
 - answer correctly with source fidelity
 
 ## 5. Spatial grounding mathematics
 
-Suppose token $i$ has text embedding $t_i$ and bounding box $b_i=(x_{1i}, y_{1i}, x_{2i}, y_{2i})$. A layout-aware encoder often uses:
+Suppose token $i$ has text embedding $t_i$ and bounding box $b_i=(x_{1i}, y_{1i}, x_{2i}, y_{2i})$. A layout-aware
+encoder often uses:
 
 $$
 h_i^{(0)} = t_i + p(b_i) + v_i,
@@ -117,35 +124,39 @@ where $B_{\text{layout}}$ biases attention using relative spatial geometry.
 
 ## 6. Architecture tradeoffs
 
-| Family | Best strength | Main weakness | Best when |
-|---|---|---|---|
-| OCR + NLP | Interpretable, modular, controllable | OCR error propagation | Enterprise extraction pipelines |
-| Layout-aware encoder | Strong text-layout fusion | Needs good OCR/text tokens | Forms, invoices, structured docs |
-| OCR-free encoder-decoder | End-to-end structured generation | Harder to debug and scale | Clean specialized extraction tasks |
-| VLM + LLM | Flexible reasoning, instruction following | Expensive and prone to hallucinated grounding | Complex question answering over docs |
+| Family                   | Best strength                             | Main weakness                                 | Best when                            |
+|--------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------------|
+| OCR + NLP                | Interpretable, modular, controllable      | OCR error propagation                         | Enterprise extraction pipelines      |
+| Layout-aware encoder     | Strong text-layout fusion                 | Needs good OCR/text tokens                    | Forms, invoices, structured docs     |
+| OCR-free encoder-decoder | End-to-end structured generation          | Harder to debug and scale                     | Clean specialized extraction tasks   |
+| VLM + LLM                | Flexible reasoning, instruction following | Expensive and prone to hallucinated grounding | Complex question answering over docs |
 
 ## 7. Evaluation metrics
 
 A good document system is not judged by text fluency alone.
 
 ### Extraction metrics
+
 - exact match / field accuracy
 - normalized edit distance
 - table structure accuracy
 - token- or entity-level F1
 
 ### Grounding metrics
+
 - region IoU
 - answer-with-evidence correctness
 - source attribution quality
 
 ### System metrics
+
 - TTFT
 - end-to-end latency
 - throughput
 - failure rate under high-resolution and multi-page inputs
 
 ## 8. Failure modes
+
 - reading-order mistakes
 - OCR corruption
 - table row/column confusion
@@ -155,4 +166,7 @@ A good document system is not judged by text fluency alone.
 
 ## 9. Interview framing
 
-> Document understanding is harder than plain NLP because semantics depends on text, layout, and image evidence jointly. I would think in terms of OCR-based pipelines, layout-aware encoders, OCR-free models, and projector-plus-LLM systems. The right choice depends on whether I need strict extraction fidelity, flexible reasoning, or enterprise interpretability.
+> Document understanding is harder than plain NLP because semantics depends on text, layout, and image evidence jointly.
+> I would think in terms of OCR-based pipelines, layout-aware encoders, OCR-free models, and projector-plus-LLM systems.
+> The right choice depends on whether I need strict extraction fidelity, flexible reasoning, or enterprise
+> interpretability.

@@ -1,9 +1,10 @@
 import math
 from typing import List
 
+
 class EmbeddingUtils:
     """A collection of utilities for working with embeddings, such as cosine similarity and normalization."""
-    
+
     @staticmethod
     def dot_product(v1: List[float], v2: List[float]) -> float:
         """Calculates the dot product of two vectors."""
@@ -26,6 +27,7 @@ class EmbeddingUtils:
         # Return the normalized dot product
         return cls.dot_product(v1, v2) / (n1 * n2)
 
+
 def demo():
     """Runs a simple demo showing cosine similarity calculations."""
     v_text = [0.1, 0.5, -0.2]
@@ -33,13 +35,14 @@ def demo():
     v_img_1 = [0.12, 0.48, -0.18]
     # Define a dissimilar image vector
     v_img_2 = [-0.5, 0.1, 0.8]
-    
+
     # Calculate similarity for both candidates
     sim1 = EmbeddingUtils.cosine_similarity(v_text, v_img_1)
     sim2 = EmbeddingUtils.cosine_similarity(v_text, v_img_2)
-    
+
     print(f"Cosine Similarity (Text vs Img 1): {sim1:.4f}")
     print(f"Cosine Similarity (Text vs Img 2): {sim2:.4f}")
+
 
 if __name__ == "__main__":
     demo()

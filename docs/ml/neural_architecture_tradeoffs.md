@@ -2,7 +2,8 @@
 
 This note gives a high-level map of the main neural-network families and the tradeoffs that determine when to use them.
 
-The right architecture is not just about raw accuracy. It is about matching the model's **inductive bias** to the structure of the data and the production constraints.
+The right architecture is not just about raw accuracy. It is about matching the model's **inductive bias** to the
+structure of the data and the production constraints.
 
 ## A compact selection principle
 
@@ -59,19 +60,23 @@ $$
 
 ### What problem it solves
 
-An MLP is the default universal approximator for fixed-size vectors. It is strongest when the input is already a good feature representation.
+An MLP is the default universal approximator for fixed-size vectors. It is strongest when the input is already a good
+feature representation.
 
 ### Strengths
+
 - simple and general
 - easy to implement
 - works well on learned embeddings, tabular features, and small heads on top of larger backbones
 
 ### Weaknesses
+
 - does not encode locality, sequence order, or graph structure by default
 - parameter count can become large on raw high-dimensional inputs
 - weaker sample efficiency than architectures with better structural priors
 
 ### When to use
+
 - classification/regression heads
 - small tabular nets when trees are not preferred
 - adapters, projection heads, and residual MLP blocks inside larger systems
@@ -99,16 +104,19 @@ $$
 CNNs assume that local spatial neighborhoods matter and that useful detectors should be reused across positions.
 
 ### Strengths
+
 - excellent inductive bias for images
 - parameter efficient due to weight sharing
 - strong on limited-to-medium data regimes
 - efficient for dense spatial feature extraction
 
 ### Weaknesses
+
 - global context is indirect unless the receptive field becomes large
 - hand-crafted locality bias can be too rigid for some large-scale tasks
 
 ### Best use cases
+
 - image classification, detection, segmentation
 - OCR and document pipelines
 - any vision problem with strong local spatial structure
@@ -123,24 +131,29 @@ $$
 
 ### What problem it solves
 
-Sequential data arrives in order. Recurrent models compress past information into a compact state that can be updated online.
+Sequential data arrives in order. Recurrent models compress past information into a compact state that can be updated
+online.
 
 ### Strengths
+
 - natural online/streaming processing
 - compact state
 - low per-step memory compared with full self-attention
 
 ### Weaknesses
+
 - sequential dependency limits parallelism
 - long-range dependencies are hard
 - vanishing/exploding gradients complicate training
 
 ### Best use cases
+
 - low-latency streaming
 - moderate-length time series
 - edge or embedded systems with strict memory constraints
 
-See [RNN, LSTM, GRU, and gradient stability](rnn_lstm_gru_and_gradient_stability.md) for the full mathematical treatment.
+See [RNN, LSTM, GRU, and gradient stability](rnn_lstm_gru_and_gradient_stability.md) for the full mathematical
+treatment.
 
 ## 4. Temporal CNNs
 
@@ -158,9 +171,11 @@ $$
 
 ### Why it exists
 
-Temporal CNNs provide a middle ground between RNNs and Transformers: more parallelizable than recurrence, cheaper than full attention.
+Temporal CNNs provide a middle ground between RNNs and Transformers: more parallelizable than recurrence, cheaper than
+full attention.
 
 ### Tradeoff
+
 - better parallelism than RNNs
 - weaker adaptive long-range dependency modeling than attention
 
@@ -177,17 +192,20 @@ $$
 Instead of forcing information through a recurrent chain, each token can directly access other tokens in the same layer.
 
 ### Strengths
+
 - strong long-range dependency modeling
 - highly parallel training
 - flexible context mixing
 - foundation-model friendly
 
 ### Weaknesses
+
 - quadratic memory/time in full attention with respect to sequence length
 - often more data hungry without pretraining
 - serving cost grows with KV-cache and context length
 
 ### Best use cases
+
 - language models
 - long-context reasoning
 - encoder/decoder sequence transduction
@@ -208,6 +226,7 @@ for image size $H \times W$ and patch size $P \times P$.
 They relax the strong locality prior of CNNs and model global interactions more directly.
 
 ### Tradeoff
+
 - better global context and scaling with large pretraining
 - weaker built-in locality bias than CNNs
 - token count can be large on high-resolution images
@@ -227,6 +246,7 @@ $$
 When the data is relational rather than grid-like or sequential, graph structure is the natural prior.
 
 ### Best use cases
+
 - molecules
 - recommender systems
 - fraud networks
@@ -285,22 +305,23 @@ where $g_i(x)$ is sparse and usually only top-$k$ experts are active.
 MoE increases model capacity without activating all parameters for every token.
 
 ### Tradeoff
+
 - better parameter efficiency at fixed FLOP budget
 - routing imbalance, communication cost, and serving complexity
 
 ## Comparison table
 
-| Family | Core inductive bias | Parallelism | Long-range modeling | Data efficiency | Serving implications | Typical best use |
-|---|---|---:|---:|---:|---|---|
-| MLP | None beyond dense function approximation | High | Weak unless features already contain it | Moderate | Simple and cheap heads | Vector features, projection heads |
-| CNN | Locality + translation reuse | High | Indirect | Strong | Efficient spatial compute | Vision, OCR, dense image features |
-| RNN/LSTM/GRU | Ordered recurrence + compact state | Low across time | Moderate | Good on smaller sequential tasks | Small state, streaming-friendly | Time series, streaming |
-| Temporal CNN | Local temporal locality | High | Moderate with dilation | Good | Cheap and parallel | Signals, time series |
-| Transformer | Pairwise content-based interactions | High in training | Strong | Excellent with pretraining | KV-cache + context cost | LLMs, seq2seq, ViTs |
-| GNN | Relational neighborhoods | Medium | Depends on depth/graph | Strong on graph data | Graph batching challenges | Molecules, fraud, recommender graphs |
-| Autoencoder/VAE | Compression through latent code | High | N/A | Moderate | Useful for compression / pretraining | Denoising, representation learning |
-| Diffusion | Denoising score matching | Medium | Depends on backbone | Strong with data | Expensive iterative sampling | Image / multimodal generation |
-| MoE | Sparse conditional compute | Medium | Often Transformer-based | Strong at scale | Routing and communication overhead | Large foundation models |
+| Family          | Core inductive bias                      |      Parallelism |                     Long-range modeling |                  Data efficiency | Serving implications                 | Typical best use                     |
+|-----------------|------------------------------------------|-----------------:|----------------------------------------:|---------------------------------:|--------------------------------------|--------------------------------------|
+| MLP             | None beyond dense function approximation |             High | Weak unless features already contain it |                         Moderate | Simple and cheap heads               | Vector features, projection heads    |
+| CNN             | Locality + translation reuse             |             High |                                Indirect |                           Strong | Efficient spatial compute            | Vision, OCR, dense image features    |
+| RNN/LSTM/GRU    | Ordered recurrence + compact state       |  Low across time |                                Moderate | Good on smaller sequential tasks | Small state, streaming-friendly      | Time series, streaming               |
+| Temporal CNN    | Local temporal locality                  |             High |                  Moderate with dilation |                             Good | Cheap and parallel                   | Signals, time series                 |
+| Transformer     | Pairwise content-based interactions      | High in training |                                  Strong |       Excellent with pretraining | KV-cache + context cost              | LLMs, seq2seq, ViTs                  |
+| GNN             | Relational neighborhoods                 |           Medium |                  Depends on depth/graph |             Strong on graph data | Graph batching challenges            | Molecules, fraud, recommender graphs |
+| Autoencoder/VAE | Compression through latent code          |             High |                                     N/A |                         Moderate | Useful for compression / pretraining | Denoising, representation learning   |
+| Diffusion       | Denoising score matching                 |           Medium |                     Depends on backbone |                 Strong with data | Expensive iterative sampling         | Image / multimodal generation        |
+| MoE             | Sparse conditional compute               |           Medium |                 Often Transformer-based |                  Strong at scale | Routing and communication overhead   | Large foundation models              |
 
 ## Architecture choice as a systems decision
 
@@ -308,13 +329,20 @@ A good answer in interview connects the model family to the serving consequences
 
 ### Example reasoning pattern
 
-- A **CNN** is often easier to serve than a ViT at modest scale because its compute is structured and locality is explicit.
-- A **Transformer** may outperform an RNN on long context, but at serving time it creates KV-cache pressure and latency tradeoffs.
-- A **MoE model** can have attractive training-time or quality-per-FLOP properties, but production serving becomes harder because expert routing increases communication and load-balancing complexity.
-- A **VLM** may inherit the serving pathologies of both the vision stack and the LLM stack, so architecture choice matters twice.
+- A **CNN** is often easier to serve than a ViT at modest scale because its compute is structured and locality is
+  explicit.
+- A **Transformer** may outperform an RNN on long context, but at serving time it creates KV-cache pressure and latency
+  tradeoffs.
+- A **MoE model** can have attractive training-time or quality-per-FLOP properties, but production serving becomes
+  harder because expert routing increases communication and load-balancing complexity.
+- A **VLM** may inherit the serving pathologies of both the vision stack and the LLM stack, so architecture choice
+  matters twice.
 
 ## What to say in interview
 
 A concise strong framing is:
 
-> I choose architectures by matching the inductive bias to the data structure and then checking whether the resulting training and serving costs are acceptable. CNNs are strong when locality matters, RNNs when online state matters, Transformers when global context matters, and VLMs when cross-modal grounding matters. The interesting engineering work starts when the best modeling choice conflicts with the best serving choice.
+> I choose architectures by matching the inductive bias to the data structure and then checking whether the resulting
+> training and serving costs are acceptable. CNNs are strong when locality matters, RNNs when online state matters,
+> Transformers when global context matters, and VLMs when cross-modal grounding matters. The interesting engineering work
+> starts when the best modeling choice conflicts with the best serving choice.

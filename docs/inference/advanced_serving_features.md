@@ -1,19 +1,24 @@
 # Advanced Serving Features: Prefix Caching, Chunked Prefill, Preemption, and Runtime Tradeoffs
 
-The repo already explains batching and KV cache. This document fills the next layer of serving concepts that often come up in senior inference interviews.
+The repo already explains batching and KV cache. This document fills the next layer of serving concepts that often come
+up in senior inference interviews.
 
 ## 1. Prefix caching
 
 ### Idea
-If many requests share the same prompt prefix, the server can reuse previously computed KV-cache entries for that shared prefix instead of recomputing them.
+
+If many requests share the same prompt prefix, the server can reuse previously computed KV-cache entries for that shared
+prefix instead of recomputing them.
 
 This is especially useful for:
+
 - repeated system prompts
 - repeated long instructions
 - shared document context prefixes
 - templated enterprise prompts
 
 ### Cost reduction intuition
+
 Let the prefill cost for a request be
 
 $$
@@ -28,7 +33,8 @@ $$
 
 So with a high cache hit ratio $h$, TTFT can drop substantially.
 
-### Mermaid: prefix caching
+### Diagram: prefix caching
+
 ```mermaid
 flowchart LR
     A[Incoming request] --> B{Shared prefix cached?}
@@ -41,10 +47,14 @@ flowchart LR
 ## 2. Chunked prefill
 
 ### Why it exists
-Long prompts or large visual inputs can monopolize GPU time during prefill. Chunked prefill breaks large prefill work into smaller pieces so the scheduler can interleave it with decode work from ongoing requests.
+
+Long prompts or large visual inputs can monopolize GPU time during prefill. Chunked prefill breaks large prefill work
+into smaller pieces so the scheduler can interleave it with decode work from ongoing requests.
 
 ### Intuition
-Without chunking, one huge prefill can create head-of-line blocking. With chunking, the system can preserve responsiveness for short interactive requests.
+
+Without chunking, one huge prefill can create head-of-line blocking. With chunking, the system can preserve
+responsiveness for short interactive requests.
 
 If a prompt of length $L$ is split into chunks of size $c$, the number of chunks is
 
@@ -54,7 +64,8 @@ $$
 
 The scheduling benefit comes from allowing decode work to be inserted between these chunks.
 
-### Mermaid: chunked prefill scheduling
+### Diagram: chunked prefill scheduling
+
 ```mermaid
 flowchart TD
     A[Large prompt or image tokens] --> B[Prefill chunk 1]
@@ -68,15 +79,20 @@ flowchart TD
 ## 3. Preemption
 
 ### Idea
-When GPU memory or scheduler capacity is constrained, the serving system may pause, evict, or reschedule lower-priority work so higher-priority or better-fitting requests can proceed.
+
+When GPU memory or scheduler capacity is constrained, the serving system may pause, evict, or reschedule lower-priority
+work so higher-priority or better-fitting requests can proceed.
 
 In practice, preemption appears in different forms:
+
 - scheduler-level priority handling
 - request pausing and resumption
 - KV-cache eviction / recomputation tradeoffs
 
 ### Core tradeoff
-Preemption can improve tail latency for important requests, but it may increase total work if evicted state must be recomputed later.
+
+Preemption can improve tail latency for important requests, but it may increase total work if evicted state must be
+recomputed later.
 
 A simple way to think about this is:
 
@@ -84,7 +100,8 @@ $$
 \text{effective cost} = \text{forward cost} + \text{recompute overhead} + \text{scheduler overhead}.
 $$
 
-### Mermaid: preemption under pressure
+### Diagram: preemption under pressure
+
 ```mermaid
 flowchart LR
     A[Incoming high-priority request] --> B{Enough memory / slots?}
@@ -99,6 +116,7 @@ flowchart LR
 These metrics should be related, not memorized in isolation.
 
 Let:
+
 - $t_q$ = queueing time
 - $t_p$ = prefill time
 - $t_{d,1}$ = time to first decode token
@@ -132,9 +150,11 @@ $$
 or, more operationally, the spacing between successive emitted tokens.
 
 ## 5. Goodput under SLOs
+
 Throughput alone is not enough if many requests violate latency SLOs.
 
-If the offered throughput is $\lambda$ and the fraction of requests meeting the SLO is $p_{\text{SLO}}$, then a useful operational metric is
+If the offered throughput is $\lambda$ and the fraction of requests meeting the SLO is $p_{\text{SLO}}$, then a useful
+operational metric is
 
 $$
 \mathrm{goodput} = \lambda \cdot p_{\text{SLO}}.
@@ -143,13 +163,16 @@ $$
 This is why a high-throughput configuration can still be operationally bad.
 
 ## 6. Why these features matter more for VLMs
+
 VLMs intensify these issues because:
+
 - long prompts and large visual token counts increase prefill cost
 - document pages and high-resolution images can create bursty memory use
 - decoder-side KV pressure is often already high before image-heavy prompts are added
 - interactive multimodal products are especially sensitive to TTFT
 
-## Mermaid: full request lifecycle
+## Diagram: full request lifecycle
+
 ```mermaid
 flowchart LR
     A[Request arrives] --> B[Queue / admission control]
@@ -170,6 +193,10 @@ flowchart LR
 ```
 
 ## Interview framing
+
 A strong answer sounds like this:
 
-> After batching and KV cache, the next serving concepts I think about are prefix caching, chunked prefill, and preemption. Prefix caching reduces repeated prefill work, chunked prefill protects interactive latency when prompts are long, and preemption is a scheduler tool for dealing with contention and memory pressure. I relate all of them back to TTFT, TPOT, ITL, E2E latency, and especially goodput under SLOs.
+> After batching and KV cache, the next serving concepts I think about are prefix caching, chunked prefill, and
+> preemption. Prefix caching reduces repeated prefill work, chunked prefill protects interactive latency when prompts are
+> long, and preemption is a scheduler tool for dealing with contention and memory pressure. I relate all of them back to
+> TTFT, TPOT, ITL, E2E latency, and especially goodput under SLOs.

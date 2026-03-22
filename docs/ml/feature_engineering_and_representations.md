@@ -1,6 +1,7 @@
 # Feature engineering and data representations
 
-This note explains how raw inputs are transformed into features or tensors that a model can use, what strategies are common, and when manual feature engineering is still important.
+This note explains how raw inputs are transformed into features or tensors that a model can use, what strategies are
+common, and when manual feature engineering is still important.
 
 ## 1) The core problem
 
@@ -11,6 +12,7 @@ Feature engineering answers:
 > How should raw data be represented so that the model can learn the relevant structure?
 
 A representation should ideally be:
+
 - informative
 - stable
 - numerically well-behaved
@@ -22,7 +24,9 @@ A representation should ideally be:
 ## 2) Two broad paradigms
 
 ### Classical feature engineering
+
 Humans design transformations such as:
+
 - scaling
 - one-hot encoding
 - buckets / splines
@@ -32,19 +36,23 @@ Humans design transformations such as:
 - image descriptors
 
 This is still strong for:
+
 - tabular data
 - small datasets
 - interpretable systems
 - high-signal domain heuristics
 
 ### Learned representations
+
 A neural network learns features automatically from raw or lightly processed inputs:
+
 - token embeddings
 - convolutional features
 - latent vectors
 - multimodal embeddings
 
 This is strong when:
+
 - data is large
 - raw structure matters
 - manual features are too brittle or incomplete
@@ -64,12 +72,14 @@ $$
 Then the model operates on \(\phi(x)\) instead of the original input.
 
 Examples:
+
 - polynomial regression: \(\phi(x) = [1, x, x^2, x^3]\)
 - one-hot category encoding
 - TF-IDF vector for a document
 - learned embedding lookup for a token ID
 
 The feature map can be:
+
 - hand-designed
 - data-driven
 - learned jointly with the model
@@ -81,6 +91,7 @@ The feature map can be:
 ## Numeric features
 
 ### Standardization
+
 For many models, especially gradient-based ones, it helps to center and scale features:
 
 $$
@@ -88,11 +99,13 @@ x' = \frac{x - \mu}{\sigma}
 $$
 
 Why:
+
 - more balanced optimization
 - prevents one feature from dominating due to units alone
 - often important for linear models, SVMs, neural nets
 
 ### Min-max scaling
+
 Maps a feature to a bounded interval:
 
 $$
@@ -102,6 +115,7 @@ $$
 Useful when a bounded range is meaningful, but sensitive to outliers.
 
 ### Log transforms
+
 For skewed positive variables:
 
 $$
@@ -111,9 +125,11 @@ $$
 Useful for counts, money, traffic, or any heavy-tailed positive feature.
 
 ### Bucketing / binning
+
 Convert a continuous feature into intervals.
 
 Useful when:
+
 - threshold effects are important
 - monotonic trends are weak but local regimes matter
 - the downstream model benefits from discretized patterns
@@ -123,33 +139,42 @@ Useful when:
 ## Categorical features
 
 ### One-hot encoding
+
 For a categorical variable with \(K\) possible values, map it to a vector in \(\{0,1\}^K\) with one active coordinate.
 
 Good for:
+
 - low to moderate cardinality
 - linear models
 - tree models can sometimes use category-aware handling directly
 
 Tradeoff:
+
 - high cardinality leads to wide sparse vectors
 
 ### Ordinal encoding
+
 Map categories to integers.
 
 Use only when there is a real order, such as:
+
 - small < medium < large
 
 Otherwise it injects a fake geometry.
 
 ### Target / mean encoding
+
 Replace a category by a target statistic, such as the mean target value for that category.
 
-Useful for high-cardinality categories, but can leak label information if not done carefully. Must be fit with out-of-fold logic.
+Useful for high-cardinality categories, but can leak label information if not done carefully. Must be fit with
+out-of-fold logic.
 
 ### Learned embeddings
+
 Map each category ID \(i\) to a learned dense vector \(e_i \in \mathbb R^d\).
 
 Good for:
+
 - high-cardinality features
 - neural networks
 - cases where categories have latent similarity structure
@@ -159,9 +184,11 @@ Good for:
 ## Text
 
 ### Bag-of-words / n-grams
+
 Represent a document by token counts or n-gram counts.
 
 ### TF-IDF
+
 Term frequency times inverse document frequency downweights globally common words:
 
 $$
@@ -169,11 +196,13 @@ $$
 $$
 
 Why useful:
+
 - strong sparse baseline
 - cheap and effective on classification / retrieval
 - interpretable token weights
 
 ### Tokenization + embeddings
+
 A tokenizer maps text to token IDs, then an embedding table maps IDs to vectors:
 
 $$
@@ -185,6 +214,7 @@ where \(E \in \mathbb R^{V \times d}\).
 This is the standard entry point for neural language models.
 
 ### Sentence / document embeddings
+
 A model maps a full sequence to a dense vector useful for retrieval, clustering, or downstream models.
 
 ---
@@ -192,6 +222,7 @@ A model maps a full sequence to a dense vector useful for retrieval, clustering,
 ## Time series
 
 ### Lags
+
 Create past-value features such as:
 
 $$
@@ -199,21 +230,27 @@ x_{t-1}, x_{t-2}, \dots, x_{t-k}
 $$
 
 ### Rolling statistics
+
 Examples:
+
 - rolling mean
 - rolling std
 - rolling min / max
 - exponentially weighted averages
 
 ### Calendar features
+
 Examples:
+
 - day of week
 - month
 - holiday indicator
 - hour of day
 
 ### Frequency-domain features
+
 Examples:
+
 - Fourier terms
 - spectral power
 - seasonal decomposition summaries
@@ -225,17 +262,20 @@ These are useful when periodicity matters.
 ## Images
 
 ### Classical preprocessing
+
 - resize
 - center crop
 - normalization by channel mean/std
 - augmentation: flips, crops, color jitter
 
 ### Hand-crafted features (older pipeline)
+
 - SIFT, HOG, edge descriptors
 
 These were historically important, but deep CNN features have largely replaced them in mainstream vision tasks.
 
 ### Learned vision representations
+
 Images are converted to tensors of shape \(C \times H \times W\), then a CNN or ViT learns features automatically.
 
 For a CNN, the feature extractor is learned through convolutional layers.
@@ -246,6 +286,7 @@ For a ViT, the image is split into patches and patch embeddings are fed to a Tra
 ## Audio
 
 Common transformations:
+
 - waveform normalization
 - spectrograms
 - mel spectrograms
@@ -258,6 +299,7 @@ These convert raw time-domain audio into a representation where local frequency 
 ## Graphs / structured relational data
 
 Possible features:
+
 - node degree
 - centrality
 - edge attributes
@@ -285,23 +327,24 @@ Neural networks reduce manual feature design, but they do not remove the need fo
 
 ## 6) Important design axes
 
-| Axis | Question | Examples |
-|---|---|---|
-| Scale | Are numerical ranges comparable? | standardization, normalization |
-| Sparsity | Should the representation be sparse or dense? | one-hot vs embeddings |
-| Invariance | Which changes should not matter? | image translation, case-folding in text |
-| Locality | Is nearby structure important? | convolutions, n-grams, lag windows |
-| Order | Does sequence position matter? | positional encoding, time index |
-| Cardinality | How many categories or tokens exist? | one-hot, hashing, embeddings |
-| Missingness | Is absence informative? | missing indicators, imputation |
-| Leakage risk | Does the transform use target info incorrectly? | target encoding without out-of-fold fitting |
-| Interpretability | Must humans inspect the features? | buckets, monotonic transforms, explicit ratios |
+| Axis             | Question                                        | Examples                                       |
+|------------------|-------------------------------------------------|------------------------------------------------|
+| Scale            | Are numerical ranges comparable?                | standardization, normalization                 |
+| Sparsity         | Should the representation be sparse or dense?   | one-hot vs embeddings                          |
+| Invariance       | Which changes should not matter?                | image translation, case-folding in text        |
+| Locality         | Is nearby structure important?                  | convolutions, n-grams, lag windows             |
+| Order            | Does sequence position matter?                  | positional encoding, time index                |
+| Cardinality      | How many categories or tokens exist?            | one-hot, hashing, embeddings                   |
+| Missingness      | Is absence informative?                         | missing indicators, imputation                 |
+| Leakage risk     | Does the transform use target info incorrectly? | target encoding without out-of-fold fitting    |
+| Interpretability | Must humans inspect the features?               | buckets, monotonic transforms, explicit ratios |
 
 ---
 
 ## 7) Common transformations
 
 ### Interaction features
+
 Create products or cross terms:
 
 $$
@@ -311,16 +354,22 @@ $$
 Useful when the model is linear but the effect is not additive.
 
 ### Polynomial features
-Expand numeric variables to higher-order terms. Useful for smooth nonlinearities in simple models, but can explode dimensionality.
+
+Expand numeric variables to higher-order terms. Useful for smooth nonlinearities in simple models, but can explode
+dimensionality.
 
 ### Hashing trick
+
 Map tokens/categories to a fixed-dimensional space via hashing. Useful for very large vocabularies or streaming systems.
 
 ### Missing-value indicators
+
 Create a binary feature showing whether a value was missing. Often useful because missingness itself can carry signal.
 
 ### Domain ratios and aggregations
+
 Examples:
+
 - debt / income
 - clicks / impressions
 - average spend over last 30 days
@@ -331,12 +380,12 @@ These encode prior domain knowledge explicitly.
 
 ## 8) Classical vs learned representations
 
-| Approach | Strength | Weakness | Good use cases |
-|---|---|---|---|
-| Hand-crafted features | Data-efficient, interpretable, fast | Can miss complex structure | tabular, low-data, regulated settings |
-| Learned embeddings | Captures latent similarity, compact | Needs data and training | NLP, recommender systems, high-cardinality categories |
-| End-to-end learned raw-input features | Powerful and flexible | Compute-heavy, data-hungry | vision, speech, large language models |
-| Hybrid | Best of both in many real systems | More pipeline complexity | production systems with mixed modalities |
+| Approach                              | Strength                            | Weakness                   | Good use cases                                        |
+|---------------------------------------|-------------------------------------|----------------------------|-------------------------------------------------------|
+| Hand-crafted features                 | Data-efficient, interpretable, fast | Can miss complex structure | tabular, low-data, regulated settings                 |
+| Learned embeddings                    | Captures latent similarity, compact | Needs data and training    | NLP, recommender systems, high-cardinality categories |
+| End-to-end learned raw-input features | Powerful and flexible               | Compute-heavy, data-hungry | vision, speech, large language models                 |
+| Hybrid                                | Best of both in many real systems   | More pipeline complexity   | production systems with mixed modalities              |
 
 ---
 
@@ -392,6 +441,7 @@ x = embedding(token_ids)   # shape: [batch, seq_len, d_model]
 ## 10) Failure modes
 
 Common mistakes:
+
 - scaling train and test with different statistics
 - target leakage in encoders or aggregations
 - one-hot exploding dimension for extreme cardinality
@@ -407,14 +457,14 @@ Common mistakes:
 1. Understand the modality and task.
 2. Define the representation compatible with the model family.
 3. Apply basic hygiene:
-   - missing values
-   - scaling where needed
-   - leakage-safe fitting
+    - missing values
+    - scaling where needed
+    - leakage-safe fitting
 4. Add domain-informed features if data is limited.
 5. Compare:
-   - simple engineered features
-   - learned features
-   - hybrid approaches
+    - simple engineered features
+    - learned features
+    - hybrid approaches
 6. Keep the transform reproducible in serving.
 
 ---

@@ -13,15 +13,18 @@ Using the test set repeatedly for tuning leaks information and invalidates it as
 ## Bias-variance tradeoff
 
 Expected prediction error can be decomposed conceptually as:
+
 - **bias**: systematic error from an overly rigid model
 - **variance**: sensitivity to sampling noise
 - **irreducible noise**: randomness in the target
 
 Typical patterns:
+
 - high bias: underfitting
 - high variance: overfitting
 
 Examples:
+
 - a shallow tree often has higher bias
 - a deep unconstrained tree often has higher variance
 
@@ -30,6 +33,7 @@ Examples:
 When data is limited, $k$-fold cross-validation gives a more stable estimate.
 
 Procedure:
+
 1. split the data into $k$ folds
 2. train on $k-1$ folds
 3. validate on the held-out fold
@@ -40,11 +44,13 @@ This reduces dependence on one arbitrary split.
 ## Metrics
 
 ### Regression
+
 - MSE / RMSE
 - MAE
 - $R^2$
 
 ### Classification
+
 - accuracy
 - precision, recall, F1
 - ROC-AUC
@@ -55,6 +61,7 @@ This reduces dependence on one arbitrary split.
 Metric choice should match the task cost structure.
 
 Examples:
+
 - fraud detection: recall or PR-AUC may matter more than accuracy
 - credit scoring: calibration and ranking may both matter
 - medical screening: false negatives may dominate the decision
@@ -62,6 +69,7 @@ Examples:
 ## Confusion matrix
 
 For binary classification:
+
 - true positive
 - false positive
 - true negative
@@ -86,6 +94,7 @@ A model can rank examples well but be poorly calibrated.
 - **calibration**: do predicted probabilities match observed frequencies?
 
 Example:
+
 - if all predictions around 0.8 are truly positive about 80% of the time, the model is well calibrated
 
 ## Distribution shift
@@ -93,6 +102,7 @@ Example:
 Generalization can fail when train and deployment distributions differ.
 
 Examples:
+
 - covariate shift
 - label shift
 - concept drift over time
@@ -102,6 +112,7 @@ This is why time-based validation or group-based validation is often necessary i
 ## Data leakage
 
 Common leakage sources:
+
 - target-derived features
 - fitting preprocessing on the full dataset
 - using future information in time series

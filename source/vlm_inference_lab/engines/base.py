@@ -2,11 +2,13 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 
+
 @dataclass
 class ChatMessage:
     """A single message in a chat conversation."""
     role: str
     content: str
+
 
 @dataclass
 class CompletionResult:
@@ -17,6 +19,7 @@ class CompletionResult:
     latency_ms: float
     error: Optional[str] = None
 
+
 class EngineAdapter(ABC):
     """An abstract base class for inference engine adapters."""
 
@@ -26,11 +29,7 @@ class EngineAdapter(ABC):
         pass
 
     @abstractmethod
-    def chat_completion(
-        self, 
-        messages: List[ChatMessage], 
-        **kwargs
-    ) -> CompletionResult:
+    def chat_completion(self, messages: List[ChatMessage], **kwargs) -> CompletionResult:
         """Sends a chat completion request to the engine."""
         pass
 

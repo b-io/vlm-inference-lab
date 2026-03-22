@@ -6,7 +6,14 @@
 
 # Configuration
 $TF_DIR = "infra\terraform\azure\single-node"
-$MODEL = if ($args[0]) { $args[0] } else { "facebook/opt-125m" } # Default lightweight model
+$MODEL = if ($args[0])
+{
+    $args[0]
+}
+else
+{
+    "facebook/opt-125m"
+} # Default lightweight model
 
 Write-Host "--------------------------------------------------------"
 Write-Host "VLM Inference Lab - End-to-End Demo (Azure)"
@@ -27,7 +34,14 @@ Write-Host "VM Provisioned at: $VM_IP"
 # 2. Start vLLM on remote VM
 Write-Host "Starting vLLM on Remote VM..."
 # We assume standard SSH is available and key is configured
-$HF_TOKEN_VAL = if ($env:HF_TOKEN) { $env:HF_TOKEN } else { "" }
+$HF_TOKEN_VAL = if ($env:HF_TOKEN)
+{
+    $env:HF_TOKEN
+}
+else
+{
+    ""
+}
 ssh -o StrictHostKeyChecking=no $VM_IP "cd vlm-inference-lab && HF_TOKEN='$HF_TOKEN_VAL' ./scripts/azure/start_vllm.sh '$MODEL'"
 
 # 3. Wait for Healthcheck
@@ -35,24 +49,30 @@ Write-Host "Waiting for vLLM to be healthy (this may take a few minutes for mode
 $MAX_RETRIES = 30
 $RETRY_COUNT = 0
 
-while ($true) {
-    try {
+while ($true)
+{
+    try
+    {
         $response = Invoke-WebRequest -Uri "http://${VM_IP}:8000/v1/models" -UseBasicParsing -ErrorAction SilentlyContinue
-        if ($response.StatusCode -eq 200) {
+        if ($response.StatusCode -eq 200)
+        {
             Write-Host "vLLM is Healthy!"
             break
         }
-    } catch {
+    }
+    catch
+    {
         # Ignore errors during wait
     }
 
     $RETRY_COUNT++
-    if ($RETRY_COUNT -ge $MAX_RETRIES) {
+    if ($RETRY_COUNT -ge $MAX_RETRIES)
+    {
         Write-Error "Error: vLLM did not become healthy in time."
         exit 1
     }
-    
-    $WaitMsg = "    Attempt $RETRY_COUNT/$MAX_RETRIES: vLLM is not ready yet..."
+
+    $WaitMsg = "    Attempt $RETRY_COUNT/$MAX_RETRIES:  vLLM is not ready yet..."
     Write-Host "    $WaitMsg"
     Start-Sleep -Seconds 20
 }

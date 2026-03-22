@@ -1,8 +1,10 @@
 # Knowledge Distillation for VLM and LLM Serving
 
-Knowledge distillation (KD) compresses a larger **teacher** model into a smaller **student** model so that the student preserves as much useful behavior as possible while serving faster, cheaper, or within tighter memory limits.
+Knowledge distillation (KD) compresses a larger **teacher** model into a smaller **student** model so that the student
+preserves as much useful behavior as possible while serving faster, cheaper, or within tighter memory limits.
 
 For interview purposes, the right mental model is:
+
 - KD is a **teacher-student compression** strategy
 - the objective is usually **quality retention under lower serving cost**
 - for VLMs, the student must preserve not only fluent outputs but also **grounding** and **alignment**
@@ -10,6 +12,7 @@ For interview purposes, the right mental model is:
 ## 1. Core intuition
 
 A hard label tells the model only which class is correct. A teacher distribution also tells the student:
+
 - which alternatives are plausible
 - which classes are semantically similar
 - where the teacher is confident or uncertain
@@ -31,8 +34,9 @@ The standard KD loss is
 
 $$
 \mathcal{L}_{\text{KD}} = \alpha \, \mathcal{L}_{\text{task}}(y, p^{(s)}(1))
+
 + (1-\alpha) T^2 \, \mathrm{KL}\!\left(p^{(t)}(T) \;\|\; p^{(s)}(T)\right).
-$$
+  $$
 
 For classification,
 
@@ -114,11 +118,14 @@ $$
 
 ### Important implementation note
 
-In production implementations, the label loss is usually computed on the student's **untempered** probabilities or logits, not on the softened probabilities shown in this pedagogical example. The example is still useful because it makes the role of the two terms explicit.
+In production implementations, the label loss is usually computed on the student's **untempered** probabilities or
+logits, not on the softened probabilities shown in this pedagogical example. The example is still useful because it
+makes the role of the two terms explicit.
 
 ## 6. Feature distillation
 
 For VLMs, distillation often goes beyond final logits. The student may match:
+
 - intermediate visual features
 - aligned embeddings
 - attention maps
@@ -142,11 +149,13 @@ $$
 \mathcal{L}_{\text{seq}} = - \sum_{t=1}^{T} \log p_\theta(\hat y_t \mid \hat y_{<t}, x).
 $$
 
-This is useful when the teacher is more reliable than the raw labels or when the student should mimic the teacher's style or reasoning pattern.
+This is useful when the teacher is more reliable than the raw labels or when the student should mimic the teacher's
+style or reasoning pattern.
 
 ## 8. Distillation targets inside a VLM
 
 A VLM may be distilled at multiple levels:
+
 - **vision encoder distillation**
 - **projector / connector distillation**
 - **LLM decoder distillation**
@@ -193,6 +202,7 @@ flowchart TD
 ## 9. Operational value
 
 KD is valuable when the teacher is too expensive to deploy. Common goals are:
+
 - fit on a single GPU instead of a multi-GPU setup
 - lower TTFT and decode cost
 - reduce memory pressure and increase batchability
@@ -209,6 +219,7 @@ If the student is smaller and more cache-friendly, throughput often rises and ta
 ## 10. Failure modes
 
 KD can fail when:
+
 - the student is too small to represent the teacher's behavior
 - the teacher is miscalibrated or wrong
 - the student learns style without grounding
@@ -218,4 +229,6 @@ For VLMs, this last point is especially important.
 
 ## 11. Interview framing
 
-> Knowledge distillation is a way to move from a high-quality but expensive teacher to a deployment-sized student. I would think in terms of logit distillation, feature distillation, and sequence distillation, and for VLMs I would explicitly evaluate whether the student preserved grounding, not just text fluency.
+> Knowledge distillation is a way to move from a high-quality but expensive teacher to a deployment-sized student. I
+> would think in terms of logit distillation, feature distillation, and sequence distillation, and for VLMs I would
+> explicitly evaluate whether the student preserved grounding, not just text fluency.

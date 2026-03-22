@@ -4,9 +4,10 @@ import statistics
 import contextlib
 from typing import List, Optional, Dict
 
+
 class PerformanceMonitor:
     """A helper class to monitor and record execution times of various operations."""
-    
+
     def __init__(self):
         """Initializes the performance monitor with an empty metrics dictionary."""
         self.metrics: Dict[str, List[float]] = {}
@@ -35,6 +36,7 @@ class PerformanceMonitor:
             print(f"  Avg:   {statistics.mean(values):.6f}s")
             print(f"  Min:   {min(values):.6f}s")
             print(f"  Max:   {max(values):.6f}s")
+
 
 if __name__ == "__main__":
     monitor = PerformanceMonitor()

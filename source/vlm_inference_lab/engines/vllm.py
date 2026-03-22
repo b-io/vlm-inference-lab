@@ -3,6 +3,7 @@ import requests
 from typing import Any, Dict, List, Optional
 from .base import EngineAdapter, ChatMessage, CompletionResult
 
+
 class VllmEngineAdapter(EngineAdapter):
     """An adapter for vLLM server via OpenAI-compatible API."""
 
@@ -28,51 +29,28 @@ class VllmEngineAdapter(EngineAdapter):
 
         # Heuristic: use /completions for base models, /chat/completions for chat/instruct models
         lower_model = model.lower()
-        use_chat = any(
-            token in lower_model
-            for token in ["instruct", "chat", "it", "assistant"]
-        )
+        use_chat = any(token in lower_model for token in ["instruct", "chat", "it", "assistant"])
 
         # Record start time for latency calculation
         start_time = time.perf_counter()
         try:
             if use_chat:
                 # Prepare payload for chat completions endpoint
-                payload = {
-                    "model": model,
-                    "messages": [{"role": m.role, "content": m.content} for m in messages],
-                    **kwargs,
-                }
-                response = requests.post(
-                    f"{self.base_url}/chat/completions",
-                    json=payload,
-                    timeout=300,
-                )
+                payload = {"model": model, "messages": [{"role": m.role, "content": m.content} for m in messages],
+                        **kwargs, }
+                response = requests.post(f"{self.base_url}/chat/completions", json=payload, timeout=300, )
             else:
                 # Prepare payload for standard completions endpoint
-                payload = {
-                    "model": model,
-                    "prompt": prompt,
-                    **kwargs,
-                }
-                response = requests.post(
-                    f"{self.base_url}/completions",
-                    json=payload,
-                    timeout=300,
-                )
+                payload = {"model": model, "prompt": prompt, **kwargs, }
+                response = requests.post(f"{self.base_url}/completions", json=payload, timeout=300, )
 
             # Calculate latency in milliseconds
             latency_ms = (time.perf_counter() - start_time) * 1000
 
             if response.status_code != 200:
                 # Return result with error message on failure
-                return CompletionResult(
-                    text="",
-                    prompt_tokens=0,
-                    completion_tokens=0,
-                    latency_ms=latency_ms,
-                    error=f"vLLM error: {response.text}",
-                )
+                return CompletionResult(text="", prompt_tokens=0, completion_tokens=0, latency_ms=latency_ms,
+                        error=f"vLLM error: {response.text}", )
 
             # Parse JSON response and extract generated text
             data = response.json()
@@ -84,23 +62,14 @@ class VllmEngineAdapter(EngineAdapter):
                 text = choice.get("text", "")
 
             # Return the completion result
-            return CompletionResult(
-                text=text,
-                prompt_tokens=usage.get("prompt_tokens", 0),
-                completion_tokens=usage.get("completion_tokens", 0),
-                latency_ms=latency_ms,
-            )
+            return CompletionResult(text=text, prompt_tokens=usage.get("prompt_tokens", 0),
+                    completion_tokens=usage.get("completion_tokens", 0), latency_ms=latency_ms, )
 
         except requests.exceptions.RequestException as e:
             # Handle network errors and return results
             latency_ms = (time.perf_counter() - start_time) * 1000
-            return CompletionResult(
-                text="",
-                prompt_tokens=0,
-                completion_tokens=0,
-                latency_ms=latency_ms,
-                error=f"Network error: {str(e)}",
-            )
+            return CompletionResult(text="", prompt_tokens=0, completion_tokens=0, latency_ms=latency_ms,
+                    error=f"Network error: {str(e)}", )
 
     def metrics(self) -> Dict[str, Any]:
         """Fetches engine-specific metrics if available."""

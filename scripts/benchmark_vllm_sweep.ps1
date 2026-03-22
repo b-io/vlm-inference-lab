@@ -3,28 +3,44 @@
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-function Normalize-RunpodBaseUrl {
+function Normalize-RunpodBaseUrl
+{
     param([string]$Url)
     $Url = $Url.TrimEnd('/')
-    if ($Url.EndsWith('/v1')) {
+    if ( $Url.EndsWith('/v1'))
+    {
         $Url = $Url.Substring(0, $Url.Length - 3)
     }
     return $Url
 }
 
 $ORIGINAL_URL = $args[0]
-if (-not $ORIGINAL_URL) { Write-Error "Required base_url"; exit 1 }
+if (-not $ORIGINAL_URL)
+{
+    Write-Error "Required base_url"; exit 1
+}
 
 $BASE_URL = Normalize-RunpodBaseUrl $ORIGINAL_URL
 
 $MODEL_ID = $args[1]
-if (-not $MODEL_ID) { Write-Error "Required model_id"; exit 1 }
+if (-not $MODEL_ID)
+{
+    Write-Error "Required model_id"; exit 1
+}
 
-$TIER = if ($args[2]) { $args[2] } else { "sweep-small" }
+$TIER = if ($args[2])
+{
+    $args[2]
+}
+else
+{
+    "sweep-small"
+}
 
 # Remove default sweep parameters as we generate JSON files
 $OUTPUT_DIR = "results/benchmarks/sweeps"
-if (-not (Test-Path $OUTPUT_DIR)) {
+if (-not (Test-Path $OUTPUT_DIR))
+{
     New-Item -ItemType Directory -Force -Path $OUTPUT_DIR | Out-Null
 }
 
@@ -41,9 +57,12 @@ Write-Host "--------------------------------------------------------"
 
 # Check for vLLM sweep compatibility
 $HELP_TEXT = vllm bench sweep serve --help 2>&1
-if ($HELP_TEXT -match "--base-url" -and $HELP_TEXT -match "--serve-params" -and $HELP_TEXT -match "--bench-params") {
+if ($HELP_TEXT -match "--base-url" -and $HELP_TEXT -match "--serve-params" -and $HELP_TEXT -match "--bench-params")
+{
     Write-Host "vLLM sweep CLI compatibility check passed."
-} else {
+}
+else
+{
     Write-Error "Incompatible vLLM version detected for remote sweep."
     Write-Host "The current 'vllm bench sweep serve' command does not appear to support --base-url or JSON parameter files in this version."
     Write-Host "The repo's remote benchmarking path is production-ready for 'bench serve', while remote sweep behavior is version-sensitive."
@@ -78,15 +97,18 @@ $PARAMS = @(
     "--output-dir", $OUTPUT_DIR
 )
 
-Write-Host "Executing: vllm $($PARAMS -join ' ')"
+Write-Host "Executing: vllm $( $PARAMS -join ' ' )"
 vllm @PARAMS
 
-if ($LASTEXITCODE -eq 0) {
+if ($LASTEXITCODE -eq 0)
+{
     Write-Host "--------------------------------------------------------"
     Write-Host "Sweep Complete. Generating Pareto Summary..."
     $env:PYTHONPATH = "source"
     python -m vlm_inference_lab.experiments.pareto_analysis --input-dir $OUTPUT_DIR --output "$OUTPUT_DIR/pareto_summary_$TIMESTAMP.md"
-} else {
+}
+else
+{
     Write-Error "vLLM sweep failed."
     exit $LASTEXITCODE
 }

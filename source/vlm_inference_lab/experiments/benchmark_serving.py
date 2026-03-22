@@ -14,42 +14,33 @@ from dataclasses import asdict
 
 from vlm_inference_lab.engines import VllmEngineAdapter, SglangEngineAdapter, ChatMessage, CompletionResult
 
+
 async def run_request(adapter, messages, semaphore, **kwargs):
     """Sends a single request to the adapter within the given semaphore's concurrency limit."""
     async with semaphore:
         # Use a thread to run the synchronous chat_completion call
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(
-            None, 
-            lambda: adapter.chat_completion(messages, **kwargs)
-        )
+        result = await loop.run_in_executor(None, lambda: adapter.chat_completion(messages, **kwargs))
         return result
 
-async def benchmark_concurrency(
-    adapter, 
-    num_requests: int, 
-    concurrency: int, 
-    prompt: str,
-    max_tokens: int = 128
-):
+
+async def benchmark_concurrency(adapter, num_requests: int, concurrency: int, prompt: str, max_tokens: int = 128):
     """Executes a set of requests with a specified concurrency level."""
     # Create a semaphore to control concurrent requests
     semaphore = asyncio.Semaphore(concurrency)
     messages = [ChatMessage(role="user", content=prompt)]
-    
+
     # Record the start time of the benchmark
     start_time = time.perf_counter()
     # Create tasks for all requests
-    tasks = [
-        run_request(adapter, messages, semaphore, max_tokens=max_tokens) 
-        for _ in range(num_requests)
-    ]
+    tasks = [run_request(adapter, messages, semaphore, max_tokens=max_tokens) for _ in range(num_requests)]
     # Execute all tasks concurrently
     results = await asyncio.gather(*tasks)
     # Calculate total elapsed time
     total_time = time.perf_counter() - start_time
-    
+
     return results, total_time
+
 
 def summarize_results(results, total_time, num_requests, concurrency):
     """Aggregates individual completion results into a summary report."""
@@ -58,22 +49,20 @@ def summarize_results(results, total_time, num_requests, concurrency):
     errors = [r.error for r in results if r.error]
     # Calculate total generated tokens
     total_tokens = sum(r.completion_tokens for r in results if not r.error)
-    
+
     # Build the summary dictionary
-    summary = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "num_requests": num_requests,
-        "concurrency": concurrency,
-        "total_time_s": total_time,
-        "throughput_rps": num_requests / total_time if total_time > 0 else 0,
-        "throughput_tps": total_tokens / total_time if total_time > 0 else 0,
-        "error_count": len(errors),
-        "latency_avg_ms": statistics.mean(latencies) if latencies else 0,
-        "latency_p50_ms": statistics.median(latencies) if latencies else 0,
-        "latency_p95_ms": sorted(latencies)[int(len(latencies) * 0.95)] if len(latencies) >= 20 else (max(latencies) if latencies else 0),
-        "latency_p99_ms": sorted(latencies)[int(len(latencies) * 0.99)] if len(latencies) >= 100 else (max(latencies) if latencies else 0),
-    }
+    summary = {"timestamp": datetime.now(timezone.utc).isoformat(), "num_requests": num_requests,
+            "concurrency": concurrency, "total_time_s": total_time,
+            "throughput_rps": num_requests / total_time if total_time > 0 else 0,
+            "throughput_tps": total_tokens / total_time if total_time > 0 else 0, "error_count": len(errors),
+            "latency_avg_ms": statistics.mean(latencies) if latencies else 0,
+            "latency_p50_ms": statistics.median(latencies) if latencies else 0, "latency_p95_ms": sorted(latencies)[
+                                int(len(latencies) * 0.95)] if len(latencies) >= 20 else (
+                max(latencies) if latencies else 0),
+            "latency_p99_ms": sorted(latencies)[int(len(latencies) * 0.99)] if len(latencies) >= 100 else (
+                max(latencies) if latencies else 0), }
     return summary
+
 
 def get_metrics(base_url: str) -> str:
     """Fetches raw metrics from the server's /metrics endpoint."""
@@ -86,6 +75,7 @@ def get_metrics(base_url: str) -> str:
     except Exception as e:
         print(f"Warning: Could not fetch metrics from {base_url}: {e}")
     return ""
+
 
 def main():
     """Parses command-line arguments and orchestrates the serving benchmark."""
@@ -100,10 +90,11 @@ def main():
     parser.add_argument("--output-dir", default="results")
     parser.add_argument("--config", help="Path to experiment config YAML")
     parser.add_argument("--fail-on-errors", action="store_true", help="Exit with non-zero code if any request fails")
-    parser.add_argument("--tier", choices=["smoke", "latency", "throughput"], help="Benchmark tier to use (provides default requests/concurrency)")
+    parser.add_argument("--tier", choices=["smoke", "latency", "throughput"],
+                        help="Benchmark tier to use (provides default requests/concurrency)")
 
     args = parser.parse_args()
-    
+
     # Apply tier defaults if tier is specified
     if args.tier:
         if args.tier == "smoke":
@@ -118,7 +109,7 @@ def main():
             # Throughput: 200 requests, 8 concurrency
             if args.num_requests == 10: args.num_requests = 200
             if args.concurrency == 2: args.concurrency = 8
-    
+
     # Check if an experiment config YAML is provided
     if args.config:
         with open(args.config, 'r') as f:
@@ -149,10 +140,7 @@ def main():
     metrics_pre = get_metrics(args.url)
 
     results, total_time = asyncio.run(
-        benchmark_concurrency(
-            adapter, args.num_requests, args.concurrency, args.prompt, args.max_tokens
-        )
-    )
+            benchmark_concurrency(adapter, args.num_requests, args.concurrency, args.prompt, args.max_tokens))
 
     print(f"Capturing post-benchmark metrics...")
     metrics_post = get_metrics(args.url)
@@ -164,10 +152,10 @@ def main():
     summary["tier"] = args.tier if args.tier else "custom"
     summary["base_url"] = args.url
     summary["prompt_char_count"] = len(args.prompt)
-    
+
     # Add prompt length to summary for metadata
     summary["prompt_length"] = len(args.prompt)
-    
+
     print("\nResults:")
     for k, v in summary.items():
         if isinstance(v, float):
@@ -177,7 +165,7 @@ def main():
 
     # Create the output directory if it doesn't exist
     os.makedirs(args.output_dir, exist_ok=True)
-    
+
     # Use the configured timezone for local timestamp
     tz = zoneinfo.ZoneInfo(get_timezone())
     now = datetime.now(tz)
@@ -185,38 +173,27 @@ def main():
     tier_str = args.tier if args.tier else "custom"
     filename = f"benchmark_{args.backend}_{tier_str}_{timestamp}.json"
     filepath = os.path.join(args.output_dir, filename)
-    
+
     # Combine summary and raw results into a single output object
-    full_output = {
-        "summary": summary,
-        "metadata": {
-            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-            "timestamp_local": now.isoformat(),
-            "timezone": get_timezone(),
-            "tier": args.tier,
-            "base_url": args.url,
-            "prompt_length": len(args.prompt),
-            "backend": args.backend,
-            "model": adapter.model_name(),
-            "max_tokens": args.max_tokens
-        },
-        "metrics": {
-            "pre": metrics_pre,
-            "post": metrics_post
-        },
-        "raw_results": [asdict(r) for r in results]
-    }
-    
+    full_output = {"summary": summary, "metadata": {"timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "timestamp_local":                                       now.isoformat(), "timezone": get_timezone(),
+            "tier":                                                  args.tier, "base_url": args.url,
+            "prompt_length":                                         len(args.prompt), "backend": args.backend,
+            "model":                                                 adapter.model_name(),
+            "max_tokens":                                            args.max_tokens},
+            "metrics": {"pre": metrics_pre, "post": metrics_post}, "raw_results": [asdict(r) for r in results]}
+
     # Write the results to a JSON file
     with open(filepath, 'w') as f:
         json.dump(full_output, f, indent=2)
-    
+
     print(f"\nSaved detailed results to {filepath}")
 
     # Exit with error if requested and errors occurred
     if args.fail_on_errors and summary["error_count"] > 0:
         print(f"Error: Benchmark finished with {summary['error_count']} errors.")
         exit(1)
+
 
 if __name__ == "__main__":
     main()

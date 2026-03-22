@@ -1,21 +1,26 @@
 # Multilingual Alignment in Vision-Language Models
 
 Multilingual alignment is the problem of making a VLM preserve semantic correspondence across:
+
 - images
 - captions in multiple languages
 - prompts and answers in different languages
 - cross-lingual retrieval and reasoning tasks
 
-This matters for the Microsoft role because the job description explicitly mentions multilingual compatibility and broad European-market coverage.
+This matters for the Microsoft role because the job description explicitly mentions multilingual compatibility and broad
+European-market coverage.
 
 ## 1. Core goal
-Given an image $I$ and captions $t^{(1)}, t^{(2)}, \dots, t^{(m)}$ in different languages that describe the same content, we want semantically aligned representations:
+
+Given an image $I$ and captions $t^{(1)}, t^{(2)}, \dots, t^{(m)}$ in different languages that describe the same
+content, we want semantically aligned representations:
 
 $$
 z_I \approx z_{t^{(1)}} \approx z_{t^{(2)}} \approx \cdots \approx z_{t^{(m)}}.
 $$
 
 ## 2. Symmetric contrastive alignment
+
 A natural starting point is contrastive learning over image–text pairs:
 
 $$
@@ -30,9 +35,11 @@ $$
 \frac{\exp(s(z_{t_i}, z_{I_i})/\tau)}{\sum_j \exp(s(z_{t_i}, z_{I_j})/\tau)}.
 $$
 
-For multilingual training, one can extend this so different-language captions for the same image are all pulled toward the same image representation.
+For multilingual training, one can extend this so different-language captions for the same image are all pulled toward
+the same image representation.
 
 ## 3. Cross-lingual consistency
+
 A simple consistency idea is to enforce similarity between multiple language descriptions of the same image:
 
 $$
@@ -42,7 +49,8 @@ $$
 
 This encourages semantic agreement across languages.
 
-## Mermaid: multilingual alignment training
+## Diagram: multilingual alignment training
+
 ```mermaid
 flowchart TD
     A[Image] --> B[Vision encoder]
@@ -56,7 +64,9 @@ flowchart TD
 ```
 
 ## 4. Why multilingual alignment is hard
+
 It is not only a translation problem. The model must preserve:
+
 - object identity
 - cultural phrasing variation
 - OCR and layout cues in multiple languages
@@ -66,7 +76,9 @@ It is not only a translation problem. The model must preserve:
 A model may be fluent in many languages but still poorly aligned visually in some of them.
 
 ## 5. Multilingual document understanding
+
 For document tasks, multilingual alignment also includes:
+
 - reading order in different scripts
 - date / number / currency formats
 - multilingual tables and mixed-language pages
@@ -81,7 +93,9 @@ $$
 $$
 
 ## 6. Evaluation
+
 Typical evaluation families include:
+
 - cross-lingual image-text retrieval
 - multilingual VQA
 - multilingual document extraction
@@ -96,12 +110,17 @@ $$
 For classification or extraction you may also track F1, exact match, or task-specific structured accuracy.
 
 ## 7. Failure modes to mention
+
 - the image aligns strongly with English captions but weakly with other languages
 - translation-equivalent queries retrieve different visual concepts
 - OCR-heavy scripts degrade much more than Latin-script inputs
 - multilingual answers are fluent but semantically inconsistent with the image
 
 ## Interview framing
+
 A strong answer sounds like this:
 
-> Multilingual alignment means more than translating prompts. The model has to preserve the same visual semantics across languages, which I would usually enforce with contrastive image–text alignment plus some form of cross-lingual consistency. For enterprise or European-market settings, I would pay extra attention to document layouts, OCR noise, and script-specific failure modes, because those often break first.
+> Multilingual alignment means more than translating prompts. The model has to preserve the same visual semantics across
+> languages, which I would usually enforce with contrastive image–text alignment plus some form of cross-lingual
+> consistency. For enterprise or European-market settings, I would pay extra attention to document layouts, OCR noise, and
+> script-specific failure modes, because those often break first.

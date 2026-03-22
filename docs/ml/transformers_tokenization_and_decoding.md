@@ -10,6 +10,7 @@ $$
 $$
 
 Interpretation:
+
 - $QK^\top$ measures pairwise compatibility
 - softmax turns scores into attention weights
 - the weighted sum of $V$ aggregates information from other positions
@@ -19,11 +20,13 @@ Interpretation:
 Every token can directly interact with every other token in the same layer.
 
 Compared with an RNN:
+
 - shorter path length between distant positions
 - much more parallelism during training
 - quadratic memory/time in sequence length for full attention
 
 For sequence length $n$ and hidden size $d$:
+
 - self-attention: roughly $O(n^2d)$ time and $O(n^2)$ attention memory
 - recurrent layer: roughly $O(nd^2)$ time with sequential dependence
 
@@ -38,6 +41,7 @@ For sequence length $n$ and hidden size $d$:
 Modern LLMs typically use subword tokenization rather than whole-word tokenization.
 
 Typical units:
+
 - common whole words
 - word pieces
 - punctuation
@@ -45,6 +49,7 @@ Typical units:
 - special tokens
 
 Why subwords:
+
 - avoid enormous whole-word vocabularies
 - represent rare or unseen words as compositions of smaller pieces
 - work better across code, names, numbers, and multilingual text
@@ -52,12 +57,14 @@ Why subwords:
 ## Vocabulary and tokenizer internals
 
 A tokenizer typically stores:
+
 - token piece $\leftrightarrow$ token id maps
 - merge rules or token scores
 - normalization / pretokenization rules
 - special tokens
 
-BPE-style tokenizers often use merge-rank lookup tables. Trie-like prefix structures are useful for longest-prefix matching or special token handling.
+BPE-style tokenizers often use merge-rank lookup tables. Trie-like prefix structures are useful for longest-prefix
+matching or special token handling.
 
 ## Sampling and decoding
 
@@ -67,9 +74,11 @@ p(x_t \mid x_{<t}).
 $$
 
 ### Greedy decoding
+
 Choose the token with largest probability.
 
 ### Temperature
+
 Rescale logits:
 $$
 p_i = \frac{e^{z_i/T}}{\sum_j e^{z_j/T}}.
@@ -79,9 +88,11 @@ $$
 - high $T$: flatter distribution, more randomness
 
 ### Top-$p$ / nucleus sampling
+
 Sort tokens by probability and keep the smallest set whose cumulative probability mass is at least $p$.
 
 Interpretation:
+
 - $p$ is a mass threshold, not a single-token probability
 - after truncation, probabilities are renormalized before sampling
 

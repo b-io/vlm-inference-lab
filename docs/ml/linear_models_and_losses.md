@@ -15,14 +15,17 @@ L(w,b)=\frac{1}{n}\sum_{i=1}^n (\hat y_i-y_i)^2.
 $$
 
 Interpretation:
+
 - coefficients tell how the prediction changes with each feature
 - the model is linear in the parameters
 - the learned surface is a hyperplane
 
 ### What problem it solves
+
 Estimate a conditional mean $E[y\mid x]$ under a linear approximation.
 
 ### Tradeoffs
+
 - easy to fit and interpret
 - fast, stable, strong baseline
 - limited for nonlinear structure unless features are engineered
@@ -50,15 +53,18 @@ $$
 $$
 
 ### Loss
+
 Binary cross-entropy:
 $$
 L = -\frac{1}{n}\sum_{i=1}^n \left[y_i\log \hat p_i + (1-y_i)\log(1-\hat p_i)\right].
 $$
 
 ### What problem it solves
+
 Estimate a conditional Bernoulli probability $P(y=1\mid x)$ under a linear decision boundary in feature space.
 
 ### Tradeoffs
+
 - probabilistic and interpretable
 - strong calibration in many settings
 - limited to linear boundaries unless features are expanded
@@ -66,31 +72,34 @@ Estimate a conditional Bernoulli probability $P(y=1\mid x)$ under a linear decis
 ## Regularization
 
 ### L2 / Ridge
+
 $$
 L_{\lambda} = L + \lambda \|w\|_2^2
 $$
 shrinks coefficients smoothly.
 
 ### L1 / Lasso
+
 $$
 L_{\lambda} = L + \lambda \|w\|_1
 $$
 encourages sparsity and feature selection.
 
 Why regularize:
+
 - reduce variance
 - stabilize solutions under collinearity
 - improve generalization
 
 ## Typical losses and when they are used
 
-| Loss | Formula | Typical use | Why |
-|---|---|---|---|
-| MSE | $\frac{1}{n}\sum_i (\hat y_i-y_i)^2$ | Regression | Penalizes large errors strongly; convenient derivatives |
-| MAE | $\frac{1}{n}\sum_i |\hat y_i-y_i|$ | Regression | More robust to outliers than MSE |
-| Binary cross-entropy | $-\frac{1}{n}\sum_i [y_i\log p_i +(1-y_i)\log(1-p_i)]$ | Binary classification | Proper probabilistic objective for Bernoulli targets |
-| Cross-entropy | $-\sum_k y_k\log p_k$ | Multiclass classification | Works with softmax probabilities |
-| Hinge loss | $\max(0,1-yf(x))$ | SVM-style margin classifiers | Focuses on decision margin rather than probability fitting |
+| Loss                 | Formula                                                | Typical use                  | Why                                                        |
+|----------------------|--------------------------------------------------------|------------------------------|------------------------------------------------------------|
+| MSE                  | $\frac{1}{n}\sum_i (\hat y_i-y_i)^2$                   | Regression                   | Penalizes large errors strongly; convenient derivatives    |
+| MAE                  | $\frac{1}{n}\sum_i                                     | \hat y_i-y_i                 | $                                                          | Regression | More robust to outliers than MSE |
+| Binary cross-entropy | $-\frac{1}{n}\sum_i [y_i\log p_i +(1-y_i)\log(1-p_i)]$ | Binary classification        | Proper probabilistic objective for Bernoulli targets       |
+| Cross-entropy        | $-\sum_k y_k\log p_k$                                  | Multiclass classification    | Works with softmax probabilities                           |
+| Hinge loss           | $\max(0,1-yf(x))$                                      | SVM-style margin classifiers | Focuses on decision margin rather than probability fitting |
 
 ## Small code example
 

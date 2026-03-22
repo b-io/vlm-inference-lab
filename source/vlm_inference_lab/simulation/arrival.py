@@ -4,6 +4,7 @@ import statistics
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+
 @dataclass
 class Request:
     """A single request in the simulation with arrival and service timing."""
@@ -20,9 +21,10 @@ class Request:
             return self.end_time - self.arrival_time
         return 0.0
 
+
 class ArrivalSimulator:
     """A simulator that generates request arrivals and calculates latency/throughput."""
-    
+
     def __init__(self, rate: float, total_requests: int):
         """Initializes the arrival simulator with request rate and total count."""
         self.rate = rate  # requests per second
@@ -41,9 +43,10 @@ class ArrivalSimulator:
             requests.append(Request(id=i, arrival_time=current_time, compute_units=compute_units))
         return requests
 
+
 class SimpleServer:
     """A single-threaded server that processes requests one by one."""
-    
+
     def __init__(self, capacity_per_second: float):
         """Initializes the server with a processing capacity per second."""
         self.capacity = capacity_per_second
@@ -61,19 +64,21 @@ class SimpleServer:
             req.end_time = clock
         return requests
 
+
 def analyze_results(requests: List[Request]):
     """Analyzes simulation results and prints performance metrics."""
     latencies = [r.latency for r in requests]
     # Calculate total duration from first arrival to last completion
     total_time = requests[-1].end_time - requests[0].arrival_time
     throughput = len(requests) / total_time
-    
+
     print(f"--- Simulation Results ---")
     print(f"Total Requests: {len(requests)}")
     print(f"Throughput: {throughput:.2f} req/s")
     print(f"Avg Latency: {statistics.mean(latencies):.4f}s")
     print(f"P50 Latency: {statistics.median(latencies):.4f}s")
     print(f"P99 Latency: {statistics.quantiles(latencies, n=100)[98]:.4f}s")
+
 
 if __name__ == "__main__":
     sim = ArrivalSimulator(rate=10, total_requests=100)

@@ -8,9 +8,9 @@ version = "0.1.0"
 description = "A compact technical lab exploring inference optimization for multimodal systems."
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
-license = {text = "MIT"}
+license = { text = "MIT" }
 authors = [
-    {name = "Florian Barras", email = "florian@barras.io"}
+    { name = "Florian Barras", email = "florian@barras.io" }
 ]
 dependencies = [
     "numpy>=1.24.0",

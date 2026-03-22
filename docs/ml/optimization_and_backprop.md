@@ -10,6 +10,7 @@ f'(x)=\lim_{h\to 0}\frac{f(x+h)-f(x)}{h}.
 $$
 
 Interpretation:
+
 - the slope of the tangent line
 - the best local linear approximation
 - sensitivity of the output to a small change in the input
@@ -31,18 +32,22 @@ $$
 \end{bmatrix}.
 $$
 
-It points in the direction of steepest increase of the loss. Gradient descent therefore moves in the negative gradient direction.
+It points in the direction of steepest increase of the loss. Gradient descent therefore moves in the negative gradient
+direction.
 
 ## Forward vs backward propagation
 
 ### Forward pass
+
 Given parameters $\theta$, compute:
+
 1. pre-activations
 2. activations
 3. predictions
 4. loss
 
 ### Backward pass
+
 Use the chain rule to compute gradients of the loss with respect to every parameter.
 
 If
@@ -121,12 +126,14 @@ Mini-batch SGD uses a noisy estimate of the full gradient.
 ## Optimizer families
 
 ### SGD
+
 Simple and robust:
 $$
 \theta_{t+1} = \theta_t - \eta g_t.
 $$
 
 ### Momentum
+
 Adds an exponentially decaying velocity:
 $$
 v_{t+1} = \beta v_t + g_t,\qquad
@@ -136,6 +143,7 @@ $$
 Useful when the surface has narrow valleys or oscillatory directions.
 
 ### Adam
+
 Tracks first and second moments of the gradient:
 $$
 m_t=\beta_1 m_{t-1} + (1-\beta_1)g_t,\qquad
@@ -147,6 +155,7 @@ Adam is often faster to tune, though SGD with momentum sometimes generalizes bet
 ## Why gradients can vanish or explode
 
 When many Jacobians are multiplied together:
+
 - derivatives smaller than 1 can shrink gradients toward 0
 - derivatives larger than 1 can blow them up
 

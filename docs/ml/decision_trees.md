@@ -1,8 +1,10 @@
 # Decision Trees
 
-A decision tree is a recursive partitioning algorithm that splits the input space into regions and predicts a constant label or value in each region.
+A decision tree is a recursive partitioning algorithm that splits the input space into regions and predicts a constant
+label or value in each region.
 
 The model represents a piecewise-constant function:
+
 - **classification**: predict a class or class distribution in each leaf
 - **regression**: predict an average value in each leaf
 
@@ -26,12 +28,14 @@ The algorithm is greedy, not globally optimal.
 ## Classification criteria
 
 ### Entropy
+
 If a node contains class proportions $p_1,\dots,p_K$, the entropy is
 $$
 H(p) = -\sum_{k=1}^K p_k \log p_k.
 $$
 
 ### Gini impurity
+
 $$
 G(p) = 1 - \sum_{k=1}^K p_k^2.
 $$
@@ -55,6 +59,7 @@ A good split is one that reduces this loss the most.
 ## Exact algorithm
 
 For each node:
+
 1. loop over candidate features
 2. sort or scan candidate thresholds
 3. evaluate the impurity reduction
@@ -62,6 +67,7 @@ For each node:
 5. recurse until a stopping rule is met
 
 Typical stopping rules:
+
 - maximum depth
 - minimum samples per split
 - minimum samples per leaf
@@ -71,6 +77,7 @@ Typical stopping rules:
 ## Complexity intuition
 
 If there are $n$ samples and $d$ features:
+
 - a naive split search is expensive because many thresholds must be tested
 - in practice, implementations sort features or use efficient scans
 - training cost grows with both data size and number of features
@@ -81,6 +88,7 @@ Inference complexity is roughly proportional to tree depth.
 ## Why trees are useful
 
 ### Advantages
+
 - naturally handle nonlinear decision boundaries
 - can model feature interactions without manual feature engineering
 - require little scaling/normalization
@@ -88,6 +96,7 @@ Inference complexity is roughly proportional to tree depth.
 - support mixed feature types reasonably well
 
 ### Tradeoffs
+
 - high variance; small data changes can produce a different tree
 - axis-aligned splits may be inefficient for oblique boundaries
 - piecewise-constant predictions can be crude
@@ -99,11 +108,13 @@ This is why ensembles such as Random Forests and Gradient Boosted Trees are so e
 ## Example
 
 Suppose the target is "approve loan" and features are:
+
 - income
 - debt ratio
 - savings
 
 A tree may learn:
+
 1. if debt ratio $> 0.45$, reject
 2. else if income $> 80{,}000$, approve
 3. else if savings $> 20{,}000$, approve
@@ -131,7 +142,8 @@ pred = clf.predict(X_test)
 A fully grown tree often overfits. Two common strategies:
 
 - **pre-pruning**: stop growing early via depth/leaf constraints
-- **post-pruning**: grow a larger tree, then prune subtrees whose complexity is not justified by validation performance or a regularized objective
+- **post-pruning**: grow a larger tree, then prune subtrees whose complexity is not justified by validation performance
+  or a regularized objective
 
 Cost-complexity pruning adds a penalty on the number of leaves.
 

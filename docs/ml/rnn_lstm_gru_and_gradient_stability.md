@@ -1,6 +1,7 @@
 # RNN, LSTM, GRU, and Gradient Stability
 
-This note is the detailed companion to [Sequential models](sequential_models.md). It focuses on recurrent architectures, why they are difficult to optimize, and how the main mitigation techniques work mathematically.
+This note is the detailed companion to [Sequential models](sequential_models.md). It focuses on recurrent architectures,
+why they are difficult to optimize, and how the main mitigation techniques work mathematically.
 
 ## 1. Vanilla RNN recap
 
@@ -62,6 +63,7 @@ If it is above $1$, the gradient grows exponentially: **exploding gradient**.
 ### Vanishing gradients
 
 The signal from late time steps to early time steps becomes extremely small. Then:
+
 - early tokens/events have little influence on parameter updates
 - long-term dependencies are hard to learn
 - training may appear stable but the model forgets long contexts
@@ -69,6 +71,7 @@ The signal from late time steps to early time steps becomes extremely small. The
 ### Exploding gradients
 
 The gradient norm becomes huge. Then:
+
 - parameter updates become unstable
 - loss spikes or diverges
 - hidden states can saturate or overflow numerically
@@ -89,7 +92,8 @@ $$
 \tanh'(z) = 1 - \tanh^2(z) \le 1.
 $$
 
-In saturation regions, both derivatives are near zero. Repeated multiplication by these small derivatives strongly contributes to vanishing gradients.
+In saturation regions, both derivatives are near zero. Repeated multiplication by these small derivatives strongly
+contributes to vanishing gradients.
 
 ### ReLU
 
@@ -101,7 +105,8 @@ $$
 \operatorname{ReLU}'(z) \in \{0,1\}.
 $$
 
-This can help with vanishing in some feed-forward settings, but recurrent ReLU networks can still be unstable because the recurrent matrix can amplify activations and gradients. ReLU is not a universal fix for RNN stability.
+This can help with vanishing in some feed-forward settings, but recurrent ReLU networks can still be unstable because
+the recurrent matrix can amplify activations and gradients. ReLU is not a universal fix for RNN stability.
 
 ## 5. Gradient clipping
 
@@ -112,14 +117,15 @@ If the gradient vector is $g$, clip by global norm:
 $$
 \tilde g =
 \begin{cases}
- g & \text{if } \|g\|_2 \le c, \\
- c \dfrac{g}{\|g\|_2} & \text{if } \|g\|_2 > c.
+g & \text{if } \|g\|_2 \le c, \\
+c \dfrac{g}{\|g\|_2} & \text{if } \|g\|_2 > c.
 \end{cases}
 $$
 
 This scales down overly large gradients while preserving their direction.
 
 ### Best practice
+
 - clip by global norm rather than elementwise when possible
 - treat clipping as a stability guard, not a substitute for better architecture or initialization
 - log gradient norms during training
@@ -147,6 +153,7 @@ h_t \approx \phi(x_t + h_{t-1}).
 $$
 
 ### Best practice
+
 - use orthogonal or identity-like recurrent initialization
 - initialize forget gates in LSTMs with a positive bias so the network initially remembers more
 - avoid recurrent matrices with large uncontrolled spectral radius
@@ -199,9 +206,11 @@ $$
 \frac{\partial c_t}{\partial c_{t-1}} = f_t.
 $$
 
-If the forget gate stays near $1$, gradients can flow through many steps with much less attenuation than in a plain RNN. This is the intuition behind the so-called **constant error carousel**.
+If the forget gate stays near $1$, gradients can flow through many steps with much less attenuation than in a plain RNN.
+This is the intuition behind the so-called **constant error carousel**.
 
 ### Why the gates help
+
 - **forget gate** decides how much old memory to retain
 - **input gate** decides how much new content to write
 - **output gate** decides how much cell content to expose
@@ -234,6 +243,7 @@ $$
 which creates a shorter and more controlled gradient path than a vanilla RNN.
 
 ### LSTM vs GRU
+
 - **LSTM**: more explicit memory control, often preferred for harder long-memory problems
 - **GRU**: simpler, fewer parameters, often competitive in practice
 
@@ -267,23 +277,28 @@ This reduces compute and memory cost, but it also limits the maximum learned dep
 
 ### Curriculum on sequence length
 
-Start with shorter sequences and gradually increase length. This can make optimization easier before asking the model to manage harder long-range interactions.
+Start with shorter sequences and gradually increase length. This can make optimization easier before asking the model to
+manage harder long-range interactions.
 
 ### Masking, bucketing, and packed sequences
 
-Grouping similar sequence lengths reduces padding waste and improves gradient signal quality because fewer operations are spent on padded positions.
+Grouping similar sequence lengths reduces padding waste and improves gradient signal quality because fewer operations
+are spent on padded positions.
 
 ### Recurrent dropout and zoneout
 
-Careful regularization can help generalization without destabilizing the hidden state. Variational/recurrent dropout is typically preferred over naive time-step-independent dropout inside recurrence.
+Careful regularization can help generalization without destabilizing the hidden state. Variational/recurrent dropout is
+typically preferred over naive time-step-independent dropout inside recurrence.
 
 ### Better optimizers and learning-rate schedules
 
-Adam/AdamW with moderate learning rates is often more robust than plain SGD for recurrent training. Warmup and decay schedules also help.
+Adam/AdamW with moderate learning rates is often more robust than plain SGD for recurrent training. Warmup and decay
+schedules also help.
 
 ### Gradient noise monitoring
 
-Track gradient norms, hidden-state norms, and loss spikes. Many "mysterious" recurrent failures are simply unnoticed instability.
+Track gradient norms, hidden-state norms, and loss spikes. Many "mysterious" recurrent failures are simply unnoticed
+instability.
 
 ## 10. What does not really solve the problem
 
@@ -294,12 +309,12 @@ Track gradient norms, hidden-state norms, and loss spikes. Many "mysterious" rec
 
 ## 11. RNN vs LSTM/GRU vs Transformer
 
-| Architecture | Strength | Main weakness | Best regime |
-|---|---|---|---|
-| Vanilla RNN | Small, simple, online | Severe long-range gradient issues | Teaching, tiny streaming tasks |
-| LSTM | Better long-term memory via cell state | More parameters and slower per step | Time series, speech, online sequence tasks |
-| GRU | Simpler than LSTM, often competitive | Slightly less explicit memory control | Practical recurrent baseline |
-| Transformer | Global interactions, parallel training | Attention cost and KV-cache pressure | Long-context NLP and foundation models |
+| Architecture | Strength                               | Main weakness                         | Best regime                                |
+|--------------|----------------------------------------|---------------------------------------|--------------------------------------------|
+| Vanilla RNN  | Small, simple, online                  | Severe long-range gradient issues     | Teaching, tiny streaming tasks             |
+| LSTM         | Better long-term memory via cell state | More parameters and slower per step   | Time series, speech, online sequence tasks |
+| GRU          | Simpler than LSTM, often competitive   | Slightly less explicit memory control | Practical recurrent baseline               |
+| Transformer  | Global interactions, parallel training | Attention cost and KV-cache pressure  | Long-context NLP and foundation models     |
 
 ## 12. Interview best practices summary
 
@@ -310,8 +325,14 @@ A strong answer usually contains these points:
 3. Gradient clipping is mainly for exploding gradients.
 4. Orthogonal initialization and controlled spectral radius improve stability.
 5. LSTM and GRU help because they create additive memory paths and learned gates.
-6. In production, RNNs remain useful for streaming and compact-state settings, even though Transformers dominate many offline sequence tasks.
+6. In production, RNNs remain useful for streaming and compact-state settings, even though Transformers dominate many
+   offline sequence tasks.
 
 ## 13. A concise interview answer
 
-> Vanishing and exploding gradients in RNNs come from repeatedly multiplying the recurrent Jacobian through time. If the effective norm is below one, gradients vanish; if it is above one, they explode. I would mitigate explosion with gradient clipping and controlled recurrent initialization, and I would mitigate vanishing mainly with better architecture, especially LSTM or GRU, because the gated additive memory path gives a much shorter and more stable gradient route. I would also use layer norm, appropriate optimizer settings, and sequence-length-aware training practices.
+> Vanishing and exploding gradients in RNNs come from repeatedly multiplying the recurrent Jacobian through time. If the
+> effective norm is below one, gradients vanish; if it is above one, they explode. I would mitigate explosion with
+> gradient clipping and controlled recurrent initialization, and I would mitigate vanishing mainly with better
+> architecture, especially LSTM or GRU, because the gated additive memory path gives a much shorter and more stable
+> gradient route. I would also use layer norm, appropriate optimizer settings, and sequence-length-aware training
+> practices.

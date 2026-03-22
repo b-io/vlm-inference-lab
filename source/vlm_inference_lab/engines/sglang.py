@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 from .base import EngineAdapter, ChatMessage, CompletionResult
 
+
 class SglangEngineAdapter(EngineAdapter):
     """A placeholder adapter for the SGLang server."""
 
@@ -14,20 +15,11 @@ class SglangEngineAdapter(EngineAdapter):
         # Implement health check logic here
         return False
 
-    def chat_completion(
-        self, 
-        messages: List[ChatMessage], 
-        **kwargs
-    ) -> CompletionResult:
+    def chat_completion(self, messages: List[ChatMessage], **kwargs) -> CompletionResult:
         """Sends a chat completion request to the SGLang engine."""
         # Implement chat completion logic here
-        return CompletionResult(
-            text="",
-            prompt_tokens=0,
-            completion_tokens=0,
-            latency_ms=0.0,
-            error="SGLang adapter not fully implemented"
-        )
+        return CompletionResult(text="", prompt_tokens=0, completion_tokens=0, latency_ms=0.0,
+                error="SGLang adapter not fully implemented")
 
     def metrics(self) -> Dict[str, Any]:
         """Fetches SGLang-specific metrics if available."""
