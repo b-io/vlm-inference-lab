@@ -1,0 +1,4 @@
+num_requests: 5
+concurrency: 1
+prompt: "What is a vision-language model?"
+max_tokens: 64

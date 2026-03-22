@@ -1,0 +1,7 @@
+project_name        = "vlm-lab"
+location            = "eastus"
+vm_size             = "Standard_ND96isr_H100_v5"
+admin_username      = "azureuser"
+ssh_public_key_path = "~/.ssh/id_rsa.pub"
+allowed_cidr        = "YOUR_IP_ADDRESS/32" # Highly recommended to restrict access
+hf_token            = "your_huggingface_token"

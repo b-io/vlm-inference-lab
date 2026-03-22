@@ -22,7 +22,7 @@ In performance engineering, the first rule is **Measure First**. Profiling is th
 
 ---
 
-## Interview Discussion
+## Educational Discussion
 
 > **"How do you approach profiling a slow inference pipeline?"**
 >

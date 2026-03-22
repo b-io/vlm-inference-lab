@@ -21,7 +21,7 @@ This document explains why the engineering challenges for inference differ signi
 
 ---
 
-## Interview Discussion
+## Educational Discussion
 
 > **"Why is transformer inference often memory-bound rather than compute-bound?"**
 >

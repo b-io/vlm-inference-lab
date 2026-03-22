@@ -20,7 +20,7 @@ Standard in modern serving frameworks like **vLLM** and **SGLang**.
 
 ---
 
-## Interview Discussion
+## Educational Discussion
 
 > **"What is the difference between static and continuous batching?"**
 >

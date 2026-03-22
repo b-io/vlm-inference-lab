@@ -29,7 +29,7 @@ Understanding the difference between **Global Memory** (VRAM) and **Shared Memor
 
 ---
 
-## Interview Discussion
+## Educational Discussion
 
 > **"Why does shared memory matter for performance?"**
 >

@@ -21,7 +21,7 @@ The hardware manages threads in groups of 32, called **warps**. All threads in a
 
 ---
 
-## Interview Discussion
+## Educational Discussion
 
 > **"What is a GPU kernel, and how does the hardware execute it?"**
 >

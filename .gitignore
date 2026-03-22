@@ -226,3 +226,11 @@ reduction_bench
 # Benchmarks
 .benchmarks/
 results/
+
+# Remote demo environments
+.env.runpod
+.env.lambda
+
+# Results from remote benchmarks
+results/remote/*.json
+results/remote/*.csv

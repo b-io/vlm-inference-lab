@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
     std::cout << "correct=" << (std::abs(resultOptimized - expected_sum) < 1.0f ? "true" : "false") << std::endl;
     std::cout << "METRICS_END" << std::endl;
 
-    // Discussion points for interview:
+    // Discussion points for educational purposes:
     // - Memory bandwidth utilization
     // - Occupancy vs latency hiding
     // - Warp divergence impact in tree reduction

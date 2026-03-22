@@ -8,7 +8,7 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class CudaBenchmarkResult:
-    """Structured result from a CUDA benchmark run."""
+    """A structured result from a CUDA benchmark run."""
     name: str
     success: bool
     stdout: str
@@ -18,60 +18,63 @@ class CudaBenchmarkResult:
     metrics: Dict[str, Any] = None
 
 class CudaRunner:
-    """
-    Utility to compile and run CUDA experiments and capture their performance metrics.
-    Bridges the gap between Python orchestration and low-level GPU execution.
-    """
+    """A utility to compile and run CUDA experiments and capture their performance metrics."""
     def __init__(self, resource_dir: str = "resources/vlm_inference_lab/cuda"):
+        """Initializes the CUDA runner with the resource directory path."""
         self.resource_dir = os.path.normpath(resource_dir)
         self.logger = logging.getLogger(__name__)
 
     def compile(self, file_path: str, output_name: str, extra_args: Optional[List[str]] = None) -> (bool, str):
-        """
-        Compiles a CUDA file using nvcc.
-        Returns (success, command)
-        """
+        """Compiles a CUDA file using nvcc and returns success status and command."""
         source_path = os.path.normpath(file_path)
         output_path = os.path.normpath(output_name)
 
         if not os.path.exists(source_path):
+            # Log error if the source file is missing
             self.logger.error(f"Source file not found: {source_path}")
             return False, ""
 
+        # Construct the nvcc compilation command
         cmd = ["nvcc", source_path, "-o", output_path]
         if extra_args:
+            # Append additional arguments to the command
             cmd.extend(extra_args)
 
         cmd_str = ' '.join(cmd)
         try:
+            # Execute the compilation process
             self.logger.info(f"Compiling: {cmd_str}")
             subprocess.run(cmd, capture_output=True, text=True, check=True)
             return True, cmd_str
         except subprocess.CalledProcessError as e:
+            # Log failure if the compiler returns a non-zero exit code
             self.logger.error(f"Compilation failed:\n{e.stderr}")
             return False, cmd_str
         except FileNotFoundError:
+            # Handle cases where nvcc is not found in the system path
             self.logger.error("nvcc not found. Ensure CUDA toolkit is installed and in PATH.")
             return False, cmd_str
 
     def run_benchmark(self, executable_name: str, args: Optional[List[str]] = None, compile_cmd: Optional[str] = None) -> CudaBenchmarkResult:
-        """
-        Runs the compiled executable and parses the output for structured data.
-        """
+        """Runs the compiled executable and parses the output for structured data."""
         executable_path = os.path.normpath(f"./{executable_name}")
         if os.name == 'nt' and not (executable_path.endswith('.exe') or '.' in os.path.basename(executable_path)):
+            # Check for .exe extension on Windows systems
             if os.path.exists(executable_path + ".exe"):
                 executable_path += ".exe"
             elif not os.path.exists(executable_path):
-                 # Try with .exe anyway if it's Windows
+                 # Append .exe anyway if it's Windows
                  executable_path += ".exe"
 
+        # Build the command to run the executable
         cmd = [executable_path] + (args or [])
         cmd_str = ' '.join(cmd)
         
         try:
+            # Execute the benchmark and capture output
             self.logger.info(f"Running: {cmd_str}")
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            # Parse metrics from the output
             metrics = self._parse_output(result.stdout)
             return CudaBenchmarkResult(
                 name=executable_name,
@@ -83,6 +86,7 @@ class CudaRunner:
                 metrics=metrics
             )
         except subprocess.CalledProcessError as e:
+            # Handle benchmark execution failures
             self.logger.error(f"Execution failed:\n{e.stderr}")
             return CudaBenchmarkResult(
                 name=executable_name,
@@ -94,6 +98,7 @@ class CudaRunner:
                 metrics={}
             )
         except Exception as e:
+            # Catch unexpected errors during execution
             self.logger.error(f"An unexpected error occurred: {str(e)}")
             return CudaBenchmarkResult(
                 name=executable_name,
@@ -106,10 +111,7 @@ class CudaRunner:
             )
 
     def _parse_output(self, stdout: str) -> Dict[str, Any]:
-        """
-        Parses the stdout for structured metrics.
-        Supports both METRICS_START/END block and RESULTS_JSON tag.
-        """
+        """Parses the stdout for structured metrics using multiple parsing strategies."""
         results = {}
         in_metrics_block = False
         
@@ -117,31 +119,36 @@ class CudaRunner:
             # 1. Parse JSON tag (Legacy/Compatibility)
             if "RESULTS_JSON:" in line:
                 try:
+                    # Extract and parse JSON data from the line
                     json_str = line.split("RESULTS_JSON:")[1].strip()
                     results.update(json.loads(json_str))
                 except (IndexError, json.JSONDecodeError) as e:
+                    # Log warning for invalid JSON lines
                     self.logger.warning(f"Failed to parse JSON from line: {line}. Error: {e}")
             
             # 2. Parse METRICS block (New/Preferred)
             if "METRICS_START" in line:
+                # Set flag when the metrics block begins
                 in_metrics_block = True
                 continue
             if "METRICS_END" in line:
+                # Unset flag when the metrics block ends
                 in_metrics_block = False
                 continue
             
             if in_metrics_block and "=" in line:
+                # Parse key-value pairs separated by '='
                 key, val = line.split("=", 1)
                 key = key.strip()
                 val = val.strip()
-                # Try to convert to float/int if possible
+                # Try to convert values to numeric types if possible
                 try:
                     if "." in val:
                         results[key] = float(val)
                     else:
                         results[key] = int(val)
                 except ValueError:
-                    # Keep as string (e.g., "true", "false")
+                    # Handle boolean and string values
                     if val.lower() == "true":
                         results[key] = True
                     elif val.lower() == "false":

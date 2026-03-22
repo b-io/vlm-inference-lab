@@ -18,7 +18,7 @@ $2 \times \text{layers} \times \text{hidden size} \times \text{seq length} \time
 
 ---
 
-## Interview Discussion
+## Educational Discussion
 
 > **"Why does the KV cache create memory pressure, and how do we solve it?"**
 >

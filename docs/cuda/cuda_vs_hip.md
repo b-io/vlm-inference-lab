@@ -24,7 +24,7 @@ When deploying Vision-Language Models (VLMs), the hardware choice impacts the se
 - **Memory Bandwidth**: Both offer extremely high bandwidth (~3-5 TB/s), which is the primary bottleneck for autoregressive decoding (the "generation" phase of a VLM).
 - **Ecosystem**: NVIDIA's TensorRT-LLM is highly optimized for H100, while ROCm is the primary stack for MI300X, supported by frameworks like vLLM and SGLang.
 
-## Interview Discussion
+## Educational Discussion
 
 > **"How would you think about portability across H100 and MI300X?"**
 >

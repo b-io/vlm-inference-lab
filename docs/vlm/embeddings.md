@@ -31,7 +31,7 @@ Even after training, image and text embeddings often cluster in different region
 
 ---
 
-## Interview Discussion
+## Educational Discussion
 
 > **"How do image and text embeddings relate in a VLM?"**
 >

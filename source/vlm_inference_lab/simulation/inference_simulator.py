@@ -9,6 +9,7 @@ from vlm_inference_lab.profiling.monitor import PerformanceMonitor
 
 @dataclass
 class SimulationConfig:
+    """A configuration container for inference simulation parameters."""
     arrival_rate: float = 10.0  # requests per second
     total_requests: int = 100
     max_batch_size: int = 8
@@ -22,11 +23,9 @@ class SimulationConfig:
     avg_tokens_per_request: int = 50
 
 class InferenceSimulator:
-    """
-    Combines ArrivalSimulator, DynamicBatcher, and PerformanceMonitor
-    to simulate a full inference server behavior.
-    """
+    """A simulator that combines ArrivalSimulator, DynamicBatcher, and PerformanceMonitor to simulate inference server behavior."""
     def __init__(self, config: SimulationConfig):
+        """Initializes the inference simulator with the given configuration."""
         self.config = config
         self.arrival_sim = ArrivalSimulator(rate=config.arrival_rate, total_requests=config.total_requests)
         self.batcher = DynamicBatcher(max_batch_size=config.max_batch_size, timeout_ms=config.batch_timeout_ms)
@@ -34,14 +33,14 @@ class InferenceSimulator:
         self.processed_requests: List[Request] = []
 
     def run(self) -> Dict[str, Any]:
-        """
-        Runs the simulation.
-        """
+        """Runs the inference simulation and returns performance metrics."""
         if self.config.seed is not None:
+            # Set the random seed for reproducibility
             random.seed(self.config.seed)
             
         requests = self.arrival_sim.run()
         if not requests:
+            # Return zeroed metrics if no requests are generated
             return {
                 "total_requests": 0,
                 "throughput_rps": 0.0,
@@ -53,7 +52,7 @@ class InferenceSimulator:
                 "service_time_avg_ms": 0.0,
             }
         
-        # Sort by arrival time to be sure
+        # Sort requests by arrival time
         requests.sort(key=lambda r: r.arrival_time)
         
         current_time = 0.0
@@ -67,7 +66,7 @@ class InferenceSimulator:
             
             # 2. Check if we should process a batch
             # Note: We override the real-time check in DynamicBatcher.should_flush 
-            # for simulation time.
+            # for simulation time
             timeout_reached = (current_time - self.batcher.last_flush) >= self.batcher.timeout_sec
             batch_full = len(self.batcher.queue) >= self.batcher.max_batch_size
             
@@ -111,22 +110,23 @@ class InferenceSimulator:
                 
                 current_time = max(current_time + 0.0001, next_event_time)
 
+        # Summarize results after simulation ends
         return self._summarize()
 
     def _percentile(self, data: List[float], p: float) -> float:
-        """Helper to compute percentile using nearest-rank or linear interpolation."""
+        """Computes the percentile for the given data using nearest-rank."""
         if not data:
             return 0.0
         n = len(data)
         if n == 1:
             return data[0]
         
-        # Simple nearest-rank for efficiency in simulation
-        # Using sorted data
+        # Use simple nearest-rank for efficiency in simulation
         idx = max(0, min(n - 1, int(n * p)))
         return data[idx]
 
     def _summarize(self) -> Dict[str, Any]:
+        """Summarizes processed requests into a performance report."""
         if not self.processed_requests:
             return {
                 "total_requests": 0,
@@ -141,14 +141,16 @@ class InferenceSimulator:
                 "service_time_p95_ms": 0.0,
             }
             
+        # Extract latencies, queue times, and service times in milliseconds
         latencies_ms = sorted([r.latency * 1000 for r in self.processed_requests])
         queue_times_ms = sorted([(r.start_time - r.arrival_time) * 1000 for r in self.processed_requests])
         service_times_ms = sorted([(r.end_time - r.start_time) * 1000 for r in self.processed_requests])
         
-        # Duration from first arrival to last completion
+        # Calculate duration from first arrival to last completion
         total_duration = self.processed_requests[-1].end_time - self.processed_requests[0].arrival_time
         throughput = len(self.processed_requests) / total_duration if total_duration > 0 else 0
         
+        # Aggregate final results
         results = {
             "total_requests": len(self.processed_requests),
             "throughput_rps": throughput,

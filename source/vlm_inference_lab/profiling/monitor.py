@@ -5,24 +5,31 @@ import contextlib
 from typing import List, Optional, Dict
 
 class PerformanceMonitor:
-    """Helper to monitor and record execution times of various operations."""
+    """A helper class to monitor and record execution times of various operations."""
     
     def __init__(self):
+        """Initializes the performance monitor with an empty metrics dictionary."""
         self.metrics: Dict[str, List[float]] = {}
 
     @contextlib.contextmanager
     def timer(self, name: str):
+        """Yields a context manager that records the duration of the enclosed block."""
+        # Record the start time using a high-resolution counter
         start = time.perf_counter()
         yield
+        # Record the end time and calculate duration
         end = time.perf_counter()
         duration = end - start
         if name not in self.metrics:
+            # Initialize the list for a new metric name
             self.metrics[name] = []
         self.metrics[name].append(duration)
 
     def report(self):
+        """Prints a performance report with statistics for all recorded metrics."""
         print(f"--- Performance Report ---")
         for name, values in self.metrics.items():
+            # Print statistics for each metric
             print(f"[{name}]")
             print(f"  Count: {len(values)}")
             print(f"  Avg:   {statistics.mean(values):.6f}s")
