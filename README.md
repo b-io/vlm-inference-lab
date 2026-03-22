@@ -5,7 +5,7 @@ memory behavior, and large-scale serving systems.
 
 ## Overview
 
-This repository is a collection of experiments and technical notes around the engineering challenges of deploying modern
+This repository combines experiments and technical notes around the engineering challenges of deploying modern
 Vision-Language Models (VLMs) in production. It bridges the gap between high-level model orchestration and low-level
 hardware execution.
 
@@ -15,25 +15,30 @@ hardware execution.
 **Key Technical Themes:**
 
 - **Inference Systems**:
-  [Batching policies](docs/inference/batching.md),
-  [KV cache management](docs/inference/kv_cache.md),
-  [advanced serving features](docs/inference/advanced_serving_features.md), and
-  [latency-throughput tradeoffs](docs/inference/latency_vs_throughput.md).
+  [Batching, latency, and throughput](docs/serving/batching_latency_and_throughput.md),
+  [KV cache management](docs/serving/kv_cache.md),
+  [advanced serving features](docs/serving/advanced_serving_features.md), and
+  [training vs inference](docs/serving/training_vs_inference.md).
 - **GPU Performance**:
-  [Custom CUDA kernels](resources/vlm_inference_lab/cuda/),
-  [memory-bound vs. compute-bound analysis](docs/profiling/profiling_basics.md).
-- **Multimodal Alignment**:
-  [Shared embedding spaces](docs/vlm/embeddings.md),
-  [cross-modal reasoning architectures](docs/vlm/vlm_basics.md), and
-  [document understanding](docs/vlm/document_understanding.md).
+  [GPU memory and kernel execution](docs/systems/gpu_memory_and_kernel_execution.md),
+  [profiling and optimization workflow](docs/systems/profiling_and_optimization_workflow.md), and
+  [inference kernel bottlenecks](docs/systems/inference_kernel_bottlenecks.md).
+- **Transformers and Multimodal Systems**:
+  [Transformer tokenization and decoding](docs/transformers/transformers_tokenization_and_decoding.md),
+  [position embeddings](docs/transformers/position_embeddings_and_positional_encoding.md),
+  [multimodal embeddings](docs/multimodal/embeddings.md),
+  [VLM architectures](docs/multimodal/vlm_architectures_and_basics.md), and
+  [document understanding](docs/multimodal/document_understanding.md).
 - **Hardware Portability**:
-  Reasoning about [NVIDIA (CUDA) vs. AMD (HIP/ROCm)](docs/cuda/cuda_vs_hip.md) serving.
+  Reasoning about [NVIDIA (CUDA) vs. AMD (HIP/ROCm)](docs/systems/cuda_vs_hip.md) serving.
+- **Documentation Backbone**:
+  Start with the [documentation map](docs/README.md), which groups the notes by topic and by suggested reading path.
 
 ## Repository Layout
 
 ```text
 vlm-inference-lab/
-├── docs/                          # Technical notes & reference material
+├── docs/                          # Organized technical notes and reference material
 ├── source/
 │   └── vlm_inference_lab/         # Python orchestration & simulation
 ├── resources/
@@ -61,7 +66,7 @@ optimized shared-memory tree reduction.
   speedup=50.019
   ```
 - **Optimization Focus**: Memory hierarchy, bank conflicts, and bandwidth vs. synchronization bottlenecks.
-- **Read more**: [Baseline vs. Optimized Analysis](docs/profiling/baseline_vs_optimized.md)
+- **Read more**: [Profiling and optimization workflow](docs/systems/profiling_and_optimization_workflow.md)
 
 ### 2. Serving Simulation: Latency vs. Throughput
 
@@ -78,16 +83,16 @@ loads.
   throughput_rps      : 88.4200
   ```
 - **Key Insight**: How batching timeouts and max batch sizes impact tail latency (P99) in interactive systems.
-- **Read more**: [Latency vs. Throughput Tradeoffs](docs/inference/latency_vs_throughput.md)
+- **Read more**: [Batching, latency, and throughput](docs/serving/batching_latency_and_throughput.md)
 
 ### 3. Cross-Modal Alignment Demo
 
 *Location: `source/vlm_inference_lab/embeddings/demo.py`*
 
-Illustrates the 'Dual Encoder' (CLIP-style) architecture using mock embeddings to show how text and image information is
+Illustrates the dual-encoder (CLIP-style) architecture using mock embeddings to show how text and image information is
 aligned in a shared latent space.
 
-- **Read more**: [Multimodal Embeddings](docs/vlm/embeddings.md)
+- **Read more**: [Multimodal embeddings](docs/multimodal/embeddings.md)
 
 ### 4. Remote Orchestration: Runpod
 
@@ -100,14 +105,13 @@ Supports two modes for remote VLM serving:
 - **Benchmark Tiers**: Supports `smoke` (10 requests), `latency` (100 requests), `throughput` (200 requests), and
   `sweep` (parameter grid search).
 - **Professional Path**: This path uses vLLM's native benchmark CLI. It captures high-fidelity metrics (TTFT, ITL) and
-  supports parameter sweeps with **Pareto Frontier analysis**. *Note: Requires `vllm` installed locally to run against
-  the remote endpoint. The wrappers automatically normalize the base URL (stripping a trailing `/v1`) and pass explicit
-  endpoints.*
+  supports parameter sweeps with Pareto-frontier analysis. The wrappers normalize a trailing `/v1` in the base URL and
+  pass explicit endpoints.
 - **Diagnostics**: A lightweight helper script (`scripts/runpod/vllm_diagnostics.ps1` / `.sh`) for checking
   connectivity, SSH, and model status.
-- **Features**: Automatic model ID resolution, **Proxied SSH support** (`ssh.runpod.io`),
-  **SSH-only file creation fallback** (no SCP required), and **managed-instance safety guards**.
-- **Read more**: [Runpod Demo Guide](docs/inference/runpod_demo.md)
+- **Features**: Automatic model ID resolution, proxied SSH support (`ssh.runpod.io`), SSH-only file creation fallback,
+  and managed-instance safety guards.
+- **Read more**: [Runpod deployment guide](docs/deployment/runpod_demo.md)
 
 ## How to Run
 
@@ -147,18 +151,20 @@ To compile and run manually:
 
 ```powershell
 nvcc resources/vlm_inference_lab/cuda/reduction.cu -o reduction.exe
-.\reduction.exe
+.
+eduction.exe
 ```
 
 ## Status
 
 - ✅ **Structured Benchmarking**: Automated Python-CUDA integration via `CudaRunner`.
 - ✅ **System Modeling**: Arrival and batching simulation with robust P-metric reporting.
-- ✅ **Technical Docs**: Concise notes on KV cache, batching, and hardware-aware optimization.
+- ✅ **Technical Docs**: Organized notes on architectures, serving, systems, optimization, and multimodal modeling.
 - ✅ **Remote Orchestration**: Production-ready Runpod/vLLM benchmark wrappers.
 - ✅ **Reference Docs**:
-  [Documentation map](docs/README.md),
-  [Neural architecture tradeoffs](docs/ml/neural_architecture_tradeoffs.md),
-  [RNN gradient stability](docs/ml/rnn_lstm_gru_and_gradient_stability.md),
-  [VLM architectures](docs/vlm/vlm_basics.md), [Document understanding](docs/vlm/document_understanding.md), and
-  [Serving optimizations](docs/inference/advanced_serving_features.md).
+  - [Documentation map](docs/README.md)
+  - [Neural architecture tradeoffs](docs/architectures/neural_architecture_tradeoffs.md)
+  - [RNN gradient stability](docs/architectures/rnn_lstm_gru_and_gradient_stability.md)
+  - [VLM architectures](docs/multimodal/vlm_architectures_and_basics.md)
+  - [Document understanding](docs/multimodal/document_understanding.md)
+  - [Serving optimizations](docs/serving/advanced_serving_features.md)

@@ -16,7 +16,7 @@ $$
 Here, "systems fit" means latency, memory, throughput, parallelism, and deployability.
 
 For a hardware-aware view of how these architecture choices translate into runtime,
-see [Model complexity, parallelism, and hardware](model_complexity_parallelism_and_hardware.md).
+see [Model complexity, parallelism, and hardware](../serving/model_complexity_parallelism_and_hardware.md).
 
 ## Architecture taxonomy
 

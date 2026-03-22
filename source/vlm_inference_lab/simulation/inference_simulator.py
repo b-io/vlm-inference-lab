@@ -80,11 +80,11 @@ class InferenceSimulator:
                     total_decode_tokens = len(batch) * self.config.avg_tokens_per_request
 
                     prefill_time = (
-                                               total_prefill_units * self.config.prefill_cost_per_unit) /
-                    self.config.gpu_throughput_per_unit
+                        total_prefill_units * self.config.prefill_cost_per_unit
+                    ) / self.config.gpu_throughput_per_unit
                     decode_time = (
-                                              total_decode_tokens * self.config.decode_cost_per_token) /
-                    self.config.gpu_throughput_per_unit
+                        total_decode_tokens * self.config.decode_cost_per_token
+                    ) / self.config.gpu_throughput_per_unit
 
                     compute_time = (self.config.gpu_base_latency_ms / 1000.0) + prefill_time + decode_time
 

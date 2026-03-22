@@ -441,4 +441,4 @@ The main point is not the code. It is that model selection is always task- and c
 ## 10) Related notes
 
 For a more architecture-first summary across MLPs, CNNs, RNNs, Transformers, GNNs, diffusion backbones, and MoE,
-see [Neural architecture tradeoffs](neural_architecture_tradeoffs.md).
+see [Neural architecture tradeoffs](../architectures/neural_architecture_tradeoffs.md).

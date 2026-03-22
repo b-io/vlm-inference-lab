@@ -1,68 +1,134 @@
 # Documentation Map
 
-This directory mixes three kinds of material:
+This directory is organized by topic rather than by the historical source of each note. The goal is to make the
+material easier to browse as a coherent reference set.
 
-- **ML / architecture fundamentals**: how different model families work and when to use them.
-- **Serving / systems notes**: batching, KV cache, benchmarking, GPU bottlenecks.
-- **VLM-specific notes**: multimodal alignment, document understanding, REC, and evaluation.
+## Folder guide
 
-## Suggested reading order
+- [`fundamentals/`](fundamentals/): general machine-learning concepts, losses, optimization, representations, and model
+  selection.
+- [`architectures/`](architectures/): neural-network families and architecture tradeoffs across CNNs, RNNs, LSTMs,
+  GRUs, vision models, and related sequence models.
+- [`transformers/`](transformers/): tokenization, decoding, masking, and positional encoding for Transformer-based
+  models.
+- [`multimodal/`](multimodal/): embeddings, VLM architecture families, document understanding, multilingual alignment,
+  and referring-expression comprehension.
+- [`serving/`](serving/): inference-time behavior such as batching, KV cache, latency/throughput tradeoffs, training
+  vs. inference, and model-complexity implications for serving.
+- [`systems/`](systems/): GPU execution, memory hierarchy, kernel bottlenecks, profiling, and platform portability.
+- [`optimization/`](optimization/): model-compression and efficiency techniques such as distillation, pruning, and
+  quantization.
+- [`evaluation/`](evaluation/): task evaluation, metrics, and SLO-oriented quality assessment.
+- [`tooling/`](tooling/): framework- and CLI-specific notes, such as vLLM and SGLang.
+- [`deployment/`](deployment/): platform-specific deployment and orchestration walkthroughs.
 
-### 1. Core neural-network architecture tradeoffs
+## Suggested reading paths
 
-- [Neural architecture tradeoffs](ml/neural_architecture_tradeoffs.md)
-- [Sequential models](ml/sequential_models.md)
-- [RNN, LSTM, GRU, and gradient stability](ml/rnn_lstm_gru_and_gradient_stability.md)
-- [Position embeddings and positional encoding](ml/position_embeddings_and_positional_encoding.md)
-- [Attention masking and attention patterns](ml/attention_masking_and_attention_patterns.md)
-- [Model complexity, parallelism, and hardware](ml/model_complexity_parallelism_and_hardware.md)
-- [Vision models](ml/vision_models.md)
-- [Vision-language models](ml/vision_language_models.md)
-- [Model selection and use cases](ml/model_selection_and_use_cases.md)
+### Path 1: Foundations to architecture selection
 
-### 2. Optimization and serving
+1. [Optimization and backpropagation](fundamentals/optimization_and_backprop.md)
+2. [Activation functions](fundamentals/activation_functions.md)
+3. [Neural architecture tradeoffs](architectures/neural_architecture_tradeoffs.md)
+4. [Sequential models](architectures/sequential_models.md)
+5. [RNN, LSTM, GRU, and gradient stability](architectures/rnn_lstm_gru_and_gradient_stability.md)
+6. [Vision models](architectures/vision_models.md)
 
-- [Optimization and backpropagation](ml/optimization_and_backprop.md)
+### Path 2: Transformers and modern language-model internals
+
+1. [Transformers, tokenization, and decoding](transformers/transformers_tokenization_and_decoding.md)
+2. [Attention masking and attention patterns](transformers/attention_masking_and_attention_patterns.md)
+3. [Position embeddings and positional encoding](transformers/position_embeddings_and_positional_encoding.md)
+4. [Training vs. inference](serving/training_vs_inference.md)
+5. [KV cache](serving/kv_cache.md)
+
+### Path 3: Vision-language modeling
+
+1. [Embeddings and CLIP-style alignment](multimodal/embeddings.md)
+2. [VLM architectures and basics](multimodal/vlm_architectures_and_basics.md)
+3. [Document understanding](multimodal/document_understanding.md)
+4. [Referring expression comprehension](multimodal/referring_expression_comprehension.md)
+5. [Multilingual alignment](multimodal/multilingual_alignment.md)
+6. [VLM evaluation and SLOs](evaluation/vlm_evaluation_and_slos.md)
+
+### Path 4: Serving and performance engineering
+
+1. [Batching, latency, and throughput](serving/batching_latency_and_throughput.md)
+2. [Advanced serving features](serving/advanced_serving_features.md)
+3. [Model complexity, parallelism, and hardware](serving/model_complexity_parallelism_and_hardware.md)
+4. [Profiling and optimization workflow](systems/profiling_and_optimization_workflow.md)
+5. [Inference kernel bottlenecks](systems/inference_kernel_bottlenecks.md)
+6. [GPU memory and kernel execution](systems/gpu_memory_and_kernel_execution.md)
+
+### Path 5: Compression, tooling, and deployment
+
+1. [Knowledge distillation](optimization/knowledge_distillation.md)
+2. [Pruning and quantization](optimization/pruning_and_quantization.md)
+3. [vLLM CLI and SGLang](tooling/vllm_cli_and_sglang.md)
+4. [Runpod deployment guide](deployment/runpod_demo.md)
+5. [Lambda deployment guide](deployment/lambda_demo.md)
+
+## Complete document map
+
+### Fundamentals
+
+- [Activation functions](fundamentals/activation_functions.md)
+- [Decision trees](fundamentals/decision_trees.md)
+- [Feature engineering and representations](fundamentals/feature_engineering_and_representations.md)
+- [Linear models and losses](fundamentals/linear_models_and_losses.md)
+- [Model evaluation and generalization](fundamentals/model_evaluation_and_generalization.md)
+- [Model selection and use cases](fundamentals/model_selection_and_use_cases.md)
+- [Optimization and backpropagation](fundamentals/optimization_and_backprop.md)
+
+### Architectures
+
+- [Neural architecture tradeoffs](architectures/neural_architecture_tradeoffs.md)
+- [Sequential models](architectures/sequential_models.md)
+- [RNN, LSTM, GRU, and gradient stability](architectures/rnn_lstm_gru_and_gradient_stability.md)
+- [Vision models](architectures/vision_models.md)
+
+### Transformers
+
+- [Transformers, tokenization, and decoding](transformers/transformers_tokenization_and_decoding.md)
+- [Attention masking and attention patterns](transformers/attention_masking_and_attention_patterns.md)
+- [Position embeddings and positional encoding](transformers/position_embeddings_and_positional_encoding.md)
+
+### Multimodal
+
+- [Embeddings and CLIP-style alignment](multimodal/embeddings.md)
+- [VLM architectures and basics](multimodal/vlm_architectures_and_basics.md)
+- [Document understanding](multimodal/document_understanding.md)
+- [Multilingual alignment](multimodal/multilingual_alignment.md)
+- [Referring expression comprehension](multimodal/referring_expression_comprehension.md)
+
+### Serving
+
+- [Advanced serving features](serving/advanced_serving_features.md)
+- [Batching, latency, and throughput](serving/batching_latency_and_throughput.md)
+- [KV cache](serving/kv_cache.md)
+- [Model complexity, parallelism, and hardware](serving/model_complexity_parallelism_and_hardware.md)
+- [Training vs. inference](serving/training_vs_inference.md)
+
+### Systems
+
+- [CUDA vs. HIP / ROCm](systems/cuda_vs_hip.md)
+- [GPU memory and kernel execution](systems/gpu_memory_and_kernel_execution.md)
+- [Inference kernel bottlenecks](systems/inference_kernel_bottlenecks.md)
+- [Profiling and optimization workflow](systems/profiling_and_optimization_workflow.md)
+
+### Optimization
+
 - [Knowledge distillation](optimization/knowledge_distillation.md)
 - [Pruning and quantization](optimization/pruning_and_quantization.md)
-- [KV cache](inference/kv_cache.md)
-- [Advanced serving features](inference/advanced_serving_features.md)
-- [Latency vs throughput](inference/latency_vs_throughput.md)
-- [vLLM CLI and SGLang](tools/vllm_cli_and_sglang.md)
 
-### 3. VLM-specific topics
+### Evaluation
 
-- [VLM basics](vlm/vlm_basics.md)
-- [Embeddings and CLIP-style alignment](vlm/embeddings.md)
-- [Document understanding](vlm/document_understanding.md)
-- [Referring expression comprehension](vlm/referring_expression_comprehension.md)
-- [Multilingual alignment](vlm/multilingual_alignment.md)
 - [VLM evaluation and SLOs](evaluation/vlm_evaluation_and_slos.md)
 
-### 4. GPU / kernel / hardware reasoning
+### Tooling
 
-- [Inference kernel bottlenecks](cuda/inference_kernel_bottlenecks.md)
-- [CUDA memory model](cuda/cuda_memory_model.md)
-- [Shared vs global memory](cuda/shared_vs_global_memory.md)
-- [CUDA vs HIP / ROCm](cuda/cuda_vs_hip.md)
+- [vLLM CLI and SGLang](tooling/vllm_cli_and_sglang.md)
 
-## Coverage notes
+### Deployment
 
-The repository now covers these major architecture families:
-
-- **MLP / residual MLP**
-- **CNN / ResNet / U-Net / FPN / ViT / Swin**
-- **RNN / LSTM / GRU / temporal CNN / Transformer**
-- **Autoencoders / VAEs / diffusion backbones / graph neural networks / mixture-of-experts**
-- **Dual-encoder, fusion, projector-LLM, and document-oriented VLM families**
-
-## How to use these notes
-
-Do not just memorize model names. For each family, ask four questions:
-
-1. **What problem is the architecture trying to solve?**
-2. **What inductive bias does it encode?**
-3. **What are the optimization and serving consequences?**
-4. **When would you prefer it over the alternatives?**
-
-That framing is stronger than a taxonomy-only answer.
+- [Lambda deployment guide](deployment/lambda_demo.md)
+- [Runpod deployment guide](deployment/runpod_demo.md)
