@@ -3,7 +3,7 @@
 Knowledge distillation (KD) compresses a larger **teacher** model into a smaller **student** model so that the student
 preserves as much useful behavior as possible while serving faster, cheaper, or within tighter memory limits.
 
-For interview purposes, the right mental model is:
+A useful mental model is:
 
 - KD is a **teacher-student compression** strategy
 - the objective is usually **quality retention under lower serving cost**
@@ -25,23 +25,31 @@ Let the teacher logits be $z^{(t)}$ and the student logits be $z^{(s)}$.
 With temperature $T > 1$, the softened distributions are
 
 $$
-p_i^{(t)}(T) = \frac{\exp(z_i^{(t)}/T)}{\sum_j \exp(z_j^{(t)}/T)},
-\qquad
-p_i^{(s)}(T) = \frac{\exp(z_i^{(s)}/T)}{\sum_j \exp(z_j^{(s)}/T)}.
+p_i^{(t)}(T) = \frac{\exp\left(z_i^{(t)} / T\right)}{\sum_j \exp\left(z_j^{(t)} / T\right)}
+$$
+
+and
+
+$$
+p_i^{(s)}(T) = \frac{\exp\left(z_i^{(s)} / T\right)}{\sum_j \exp\left(z_j^{(s)} / T\right)}.
 $$
 
 The standard KD loss is
 
 $$
-\mathcal{L}_{\text{KD}} = \alpha \, \mathcal{L}_{\text{task}}(y, p^{(s)}(1))
+\mathcal{L}_{\mathrm{KD}}
+=
+\alpha \, \mathcal{L}_{\mathrm{task}}\!\left(y, p^{(s)}(1)\right)
 
-+ (1-\alpha) T^2 \, \mathrm{KL}\!\left(p^{(t)}(T) \;\|\; p^{(s)}(T)\right).
-  $$
++
+
+(1-\alpha) T^2 \, \operatorname{KL}\!\left(p^{(t)}(T) \;\|\; p^{(s)}(T)\right).
+$$
 
 For classification,
 
 $$
-\mathcal{L}_{\text{task}} = \mathrm{CE}(y, p^{(s)}(1)).
+\mathcal{L}_{\mathrm{task}} = \operatorname{CE}\!\left(y, p^{(s)}(1)\right).
 $$
 
 The factor $T^2$ compensates for gradient rescaling under temperature smoothing.
@@ -51,13 +59,13 @@ The factor $T^2$ compensates for gradient rescaling under temperature smoothing.
 At $T=1$, the softmax may be too sharp. Larger $T$ reveals richer probability structure:
 
 $$
-\mathrm{softmax}_T(z)_i = \frac{e^{z_i/T}}{\sum_j e^{z_j/T}}.
+\operatorname{softmax}_T(z)_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}.
 $$
 
 - large $T$ gives smoother targets
 - small $T$ gives sharper targets
 
-## 4. Classic teacher-student flow
+## 4. Diagram: classic teacher-student flow
 
 ```mermaid
 flowchart LR
@@ -78,42 +86,53 @@ flowchart LR
 
 ## 5. Worked example
 
-The screenshots used in interview prep correspond to the following pedagogical example.
+The screenshots correspond to the following pedagogical example.
 
 Assume a three-class problem with softened teacher and student distributions at temperature $T=5$:
 
 $$
-t = (0.8668, 0.1173, 0.0159),
-\qquad
+t = (0.8668, 0.1173, 0.0159)
+$$
+
+and
+
+$$
 s = (0.8236, 0.1653, 0.0101).
 $$
 
 The KL term is
 
 $$
-\mathrm{KL}(t\|s) = \sum_i t_i \ln\frac{t_i}{s_i}.
+\operatorname{KL}(t \| s) = \sum_i t_i \ln\!\left(\frac{t_i}{s_i}\right).
 $$
 
 Numerically,
 
 $$
-\mathrm{KL}(t\|s)
-\approx 0.8668\ln\frac{0.8668}{0.8236}
-+0.1173\ln\frac{0.1173}{0.1653}
-+0.0159\ln\frac{0.0159}{0.0101}
+\operatorname{KL}(t \| s)
+\approx
+0.8668\ln\!\left(\frac{0.8668}{0.8236}\right)
+
++
+
+0.1173\ln\!\left(\frac{0.1173}{0.1653}\right)
+
++
+
+0.0159\ln\!\left(\frac{0.0159}{0.0101}\right)
 \approx 0.0105.
 $$
 
 If the correct class is the first class, then the label-based cross-entropy term in the same toy example is
 
 $$
-\mathrm{CE}(y,s) = -\ln(0.8236) \approx 0.1941.
+\operatorname{CE}(y, s) = -\ln(0.8236) \approx 0.1941.
 $$
 
-Using $\alpha=0.5$ and $T=5$:
+Using $\alpha = 0.5$ and $T = 5$:
 
 $$
-\mathcal{L} = 0.5\,(0.1941) + 0.5\,(25)\,(0.0105) = 0.2283.
+\mathcal{L} = 0.5 \cdot 0.1941 + 0.5 \cdot 25 \cdot 0.0105 = 0.2283.
 $$
 
 ### Important implementation note
@@ -122,7 +141,22 @@ In production implementations, the label loss is usually computed on the student
 logits, not on the softened probabilities shown in this pedagogical example. The example is still useful because it
 makes the role of the two terms explicit.
 
-## 6. Feature distillation
+## 6. Why the $T^2$ factor appears
+
+Let
+
+$$
+q_i(T) = \operatorname{softmax}(z_i / T),
+$$
+
+and consider a KL term between softened teacher and student distributions. Because the logits are divided by $T$, the
+gradient of the softmax with respect to the logits scales like $1/T$. A second factor of $1/T$ appears when the student
+log-probabilities are differentiated through the KL term. The overall gradient scale is therefore reduced roughly
+by $1/T^2$.
+
+Multiplying the distillation term by $T^2$ keeps its gradient magnitude comparable across different temperatures.
+
+## 7. Feature distillation
 
 For VLMs, distillation often goes beyond final logits. The student may match:
 
@@ -135,24 +169,24 @@ For VLMs, distillation often goes beyond final logits. The student may match:
 A simple feature-matching term is
 
 $$
-\mathcal{L}_{\text{feat}} = \sum_{\ell \in \mathcal{S}} w_\ell \, \lVert h^{(t)}_\ell - P_\ell(h^{(s)}_\ell) \rVert_2^2,
+\mathcal{L}_{\mathrm{feat}} = \sum_{\ell \in \mathcal{S}} w_\ell \, \lVert h_\ell^{(t)} - P_\ell\!\left(h_\ell^{(s)}\right) \rVert_2^2,
 $$
 
 where $P_\ell$ projects the student into the teacher space when dimensions differ.
 
-## 7. Sequence distillation for generative models
+## 8. Sequence distillation for generative models
 
 For autoregressive models, distillation can target full generated sequences.
 If the teacher generates $\hat y_{1:T}$, the student can minimize
 
 $$
-\mathcal{L}_{\text{seq}} = - \sum_{t=1}^{T} \log p_\theta(\hat y_t \mid \hat y_{<t}, x).
+\mathcal{L}_{\mathrm{seq}} = - \sum_{t=1}^{T} \log p_\theta\!\left(\hat y_t \mid \hat y_{<t}, x\right).
 $$
 
 This is useful when the teacher is more reliable than the raw labels or when the student should mimic the teacher's
 style or reasoning pattern.
 
-## 8. Distillation targets inside a VLM
+## 9. Distillation targets inside a VLM
 
 A VLM may be distilled at multiple levels:
 
@@ -165,12 +199,24 @@ A VLM may be distilled at multiple levels:
 A multi-part objective can look like:
 
 $$
-\mathcal{L}_{\text{VLM}} =
-\lambda_1 \mathcal{L}_{\text{text}} +
-\lambda_2 \mathcal{L}_{\text{vision}} +
-\lambda_3 \mathcal{L}_{\text{align}} +
-\lambda_4 \mathcal{L}_{\text{KD}}.
+\mathcal{L}_{\mathrm{VLM}}
+=
+\lambda_1 \mathcal{L}_{\mathrm{text}}
+
++
+
+\lambda_2 \mathcal{L}_{\mathrm{vision}}
+
++
+
+\lambda_3 \mathcal{L}_{\mathrm{align}}
+
++
+
+\lambda_4 \mathcal{L}_{\mathrm{KD}}.
 $$
+
+## 10. Diagram: multi-level VLM distillation
 
 ```mermaid
 flowchart TD
@@ -199,7 +245,7 @@ flowchart TD
     AL --> TOT
 ```
 
-## 9. Operational value
+## 11. Operational value
 
 KD is valuable when the teacher is too expensive to deploy. Common goals are:
 
@@ -216,7 +262,7 @@ $$
 
 If the student is smaller and more cache-friendly, throughput often rises and tail latency falls.
 
-## 10. Failure modes
+## 12. Failure modes
 
 KD can fail when:
 
@@ -227,7 +273,15 @@ KD can fail when:
 
 For VLMs, this last point is especially important.
 
-## 11. Interview framing
+## 13. Best practices
+
+- start from a teacher that is stronger on the target task, not just larger
+- tune $T$ and $\alpha$ jointly; there is no universal best setting
+- preserve task loss alongside KD loss so the student does not overfit the teacher's mistakes
+- for VLMs, evaluate grounding, OCR, retrieval, and hallucination metrics explicitly
+- combine KD with quantization or pruning only after a stable student baseline exists
+
+## 14. Practical summary
 
 > Knowledge distillation is a way to move from a high-quality but expensive teacher to a deployment-sized student. I
 > would think in terms of logit distillation, feature distillation, and sequence distillation, and for VLMs I would

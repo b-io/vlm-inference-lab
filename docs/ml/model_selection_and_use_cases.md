@@ -110,7 +110,7 @@ many structured tabular datasets.
 
 Boosting builds trees sequentially to fit residual errors or negative gradients of a loss.
 
-At stage \(m\), the new learner approximates the negative gradient:
+At stage $m$, the new learner approximates the negative gradient:
 
 $$
 r_i^{(m)} \approx -\left.\frac{\partial \mathcal L(y_i, F(x_i))}{\partial F(x_i)}\right|_{F=F_{m-1}}
@@ -170,8 +170,7 @@ $$
 
 - images where nearby pixels are highly correlated
 - limited data relative to model size
-- tasks that benefit from spatial hierarchy: edges \(\rightarrow\) textures \(\rightarrow\) parts \(\rightarrow\)
-  objects
+- tasks that benefit from spatial hierarchy: edges $\rightarrow$ textures $\rightarrow$ parts $\rightarrow$ objects
 
 **Why better than a generic MLP on images:** an MLP ignores the 2D structure and uses far more parameters; a CNN imposes
 the right bias for natural images.

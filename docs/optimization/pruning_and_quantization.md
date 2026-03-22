@@ -5,8 +5,8 @@ Pruning and quantization are two of the main ways to make large multimodal model
 - **Pruning** removes parameters, channels, heads, or blocks that contribute little to quality.
 - **Quantization** stores and computes with lower-precision values.
 
-For interview purposes, the key point is that both techniques trade some amount of model fidelity for lower memory,
-lower bandwidth pressure, and potentially higher throughput.
+The key point is that both techniques trade some amount of model fidelity for lower memory use, lower bandwidth
+pressure, and potentially higher throughput.
 
 ## 1. Pruning
 
@@ -53,10 +53,12 @@ shrink matrix multiplies and attention cost.
 For a real-valued tensor $x$, a common quantization rule is
 
 $$
-q = \mathrm{clip}\left(\left\lfloor \frac{x}{s} \rceil + z\right, q_{\min}, q_{\max}\right),
+q = \mathrm{clip}\!\left(\left\lfloor \frac{x}{s} \right\rceil + z,\; q_{\min},\; q_{\max}\right),
 $$
 
-and dequantization is
+where $\left\lfloor \cdot \right\rceil$ denotes rounding to the nearest integer.
+
+And dequantization is
 
 $$
 \hat{x} = s(q - z),
@@ -157,8 +159,7 @@ and weights.
 - usually preserves more quality
 - costs more engineering and tuning effort
 
-In interviews, it is good to say that PTQ is often the fastest deployment lever, while QAT is used when PTQ quality loss
-is too high.
+In practice, PTQ is often the fastest deployment lever, while QAT is used when PTQ quality loss is too high.
 
 ## 6. Pruning + quantization together
 
@@ -192,9 +193,9 @@ flowchart LR
 - grounding errors may increase even when answers still sound fluent
 - pruning visual tokens too aggressively can remove exactly the fine detail the model needs
 
-## Interview framing
+## Practical summary
 
-A strong answer sounds like this:
+A concise summary is:
 
 > For deployment, I would first identify whether the model is limited by weight memory, KV-cache pressure, or visual
 > token inflation. Quantization is often the fastest lever for memory and bandwidth, structured pruning is better than

@@ -161,11 +161,11 @@ Document VLMs often fail in ways aggregate benchmarks hide:
 - multilingual slices may fail earlier than English slices
 - tail latency may spike on large pages even when median latency looks fine
 
-## 8. Interview framing
+## 8. Practical summary
 
-A strong answer sounds like this:
+A concise summary is:
 
 > I would not rely on one global benchmark number. I would build slice-based evaluation sets around the product
-> distribution, track both task-quality and service metrics, and then evaluate goodput under explicit SLOs. For multimodal
-> systems, especially document understanding, I want to know not only whether the model is fluent, but whether it grounds
-> correctly, extracts the right fields, and still meets latency targets on the hard slices.
+> distribution, track both task-quality and service metrics, and then evaluate goodput under explicit SLOs. For
+> multimodal systems, especially document understanding, I want to know not only whether the model is fluent, but
+> whether it grounds correctly, extracts the right fields, and still meets latency targets on the hard slices.

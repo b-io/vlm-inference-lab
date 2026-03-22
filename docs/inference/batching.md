@@ -35,8 +35,8 @@ Standard in modern serving frameworks like **vLLM** and **SGLang**.
 > **"What is the difference between static and continuous batching?"**
 >
 > Static batching requires all requests to start and finish at the same time. This is very inefficient for VLMs because
-> different prompts lead to different generation lengths. Short requests get "trapped" waiting for the longest request in
-> the batch to finish.
+> different prompts lead to different generation lengths. Short requests get "trapped" waiting for the longest request
+> in the batch to finish.
 >
 > **Continuous batching** (also called Iteration-level batching) solves this by scheduling at the granularity of a
 > single token iteration. This means a new request can be added to the running batch as soon as any other request

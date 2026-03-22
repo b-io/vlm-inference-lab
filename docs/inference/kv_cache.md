@@ -34,6 +34,6 @@ $2 \times \text{layers} \times \text{hidden size} \times \text{seq length} \time
 > throughput).
 >
 > To solve this, we use techniques like **PagedAttention** to minimize fragmentation and allow for dynamic memory
-> allocation. We also see architectural shifts like **Grouped-Query Attention (GQA)**, which reduces the KV cache size by
-> a factor of 8 or more by sharing Key and Value heads across multiple Query heads. This directly improves the throughput
-> we can achieve on a single GPU.
+> allocation. We also see architectural shifts like **Grouped-Query Attention (GQA)**, which reduces the KV cache size
+> by a factor of 8 or more by sharing Key and Value heads across multiple Query heads. This directly improves the
+> throughput we can achieve on a single GPU.

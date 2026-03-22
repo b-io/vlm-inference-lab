@@ -101,7 +101,7 @@ Typical thresholds include $\tau = 0.5$.
 
 REC is a task where “fluent output” is not enough. A model can sound plausible and still ground the wrong region.
 
-This is useful interview material because it forces a distinction between:
+This task usefully forces a distinction between:
 
 - language quality
 - visual grounding quality
@@ -136,9 +136,9 @@ flowchart TD
 - missing small text regions in documents
 - collapsing to generic saliency instead of exact grounding
 
-## Interview framing
+## Practical summary
 
-A strong answer sounds like this:
+A concise summary is:
 
 > REC is a grounding task where the model must map language to a specific region, object, or field. I think about it as
 > a conditional localization problem, often evaluated with IoU-thresholded accuracy. It is important because it exposes

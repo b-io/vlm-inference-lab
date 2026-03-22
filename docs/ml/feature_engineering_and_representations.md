@@ -63,17 +63,17 @@ In practice, real systems often combine both.
 
 ## 3) Mathematical view
 
-Raw input \(x\) is often transformed by a feature map \(\phi\):
+Raw input $x$ is often transformed by a feature map $\phi$:
 
 $$
 x \mapsto \phi(x) \in \mathbb R^d
 $$
 
-Then the model operates on \(\phi(x)\) instead of the original input.
+Then the model operates on $\phi(x)$ instead of the original input.
 
 Examples:
 
-- polynomial regression: \(\phi(x) = [1, x, x^2, x^3]\)
+- polynomial regression: $\phi(x) = [1, x, x^2, x^3]$
 - one-hot category encoding
 - TF-IDF vector for a document
 - learned embedding lookup for a token ID
@@ -140,7 +140,7 @@ Useful when:
 
 ### One-hot encoding
 
-For a categorical variable with \(K\) possible values, map it to a vector in \(\{0,1\}^K\) with one active coordinate.
+For a categorical variable with $K$ possible values, map it to a vector in $\{0,1\}^K$ with one active coordinate.
 
 Good for:
 
@@ -171,7 +171,7 @@ out-of-fold logic.
 
 ### Learned embeddings
 
-Map each category ID \(i\) to a learned dense vector \(e_i \in \mathbb R^d\).
+Map each category ID $i$ to a learned dense vector $e_i \in \mathbb R^d$.
 
 Good for:
 
@@ -209,7 +209,7 @@ $$
 e_t = E[t]
 $$
 
-where \(E \in \mathbb R^{V \times d}\).
+where $E \in \mathbb R^{V \times d}$.
 
 This is the standard entry point for neural language models.
 
@@ -276,7 +276,7 @@ These were historically important, but deep CNN features have largely replaced t
 
 ### Learned vision representations
 
-Images are converted to tensors of shape \(C \times H \times W\), then a CNN or ViT learns features automatically.
+Images are converted to tensors of shape $C \times H \times W$, then a CNN or ViT learns features automatically.
 
 For a CNN, the feature extractor is learned through convolutional layers.
 For a ViT, the image is split into patches and patch embeddings are fed to a Transformer.

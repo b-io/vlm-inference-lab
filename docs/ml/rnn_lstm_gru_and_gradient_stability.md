@@ -316,9 +316,9 @@ instability.
 | GRU          | Simpler than LSTM, often competitive   | Slightly less explicit memory control | Practical recurrent baseline               |
 | Transformer  | Global interactions, parallel training | Attention cost and KV-cache pressure  | Long-context NLP and foundation models     |
 
-## 12. Interview best practices summary
+## 12. Practical summary
 
-A strong answer usually contains these points:
+A good summary usually contains these points:
 
 1. In a vanilla RNN, gradients are products of many Jacobians, so they can decay or blow up exponentially.
 2. Sigmoid and tanh saturation worsen vanishing gradients.
@@ -328,7 +328,7 @@ A strong answer usually contains these points:
 6. In production, RNNs remain useful for streaming and compact-state settings, even though Transformers dominate many
    offline sequence tasks.
 
-## 13. A concise interview answer
+## 13. Concise summary
 
 > Vanishing and exploding gradients in RNNs come from repeatedly multiplying the recurrent Jacobian through time. If the
 > effective norm is below one, gradients vanish; if it is above one, they explode. I would mitigate explosion with

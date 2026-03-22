@@ -30,6 +30,19 @@ For sequence length $n$ and hidden size $d$:
 - self-attention: roughly $O(n^2d)$ time and $O(n^2)$ attention memory
 - recurrent layer: roughly $O(nd^2)$ time with sequential dependence
 
+## Positional information
+
+Transformers also need an explicit notion of order because self-attention does not automatically encode token position.
+In practice, this is handled with positional embeddings or attention-level schemes such as sinusoidal encoding, relative
+bias, RoPE, or ALiBi.
+
+For a deeper treatment,
+see [Position embeddings and positional encoding](position_embeddings_and_positional_encoding.md).
+
+Masks are the other half of the story: they define which token-to-token interactions are legal in encoder-only,
+decoder-only, encoder-decoder, and multimodal systems.
+See [Attention masking and attention patterns](attention_masking_and_attention_patterns.md).
+
 ## Model families
 
 - **Encoder-only** (e.g. BERT): bidirectional context, good for representation learning and understanding tasks

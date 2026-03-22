@@ -1,7 +1,6 @@
 # Inference Kernel Bottlenecks: Operator-Level Thinking for H100 and MI300X
 
-This document connects generic CUDA/HIP knowledge to the operator-level reasoning expected in a senior inference
-interview.
+This document connects generic CUDA/HIP knowledge to operator-level reasoning about inference bottlenecks.
 
 ## 1. The key question
 
@@ -132,9 +131,9 @@ flowchart TD
     E --> F
 ```
 
-## 9. Interview framing
+## 9. Practical summary
 
-A strong answer sounds like this:
+A concise summary is:
 
 > At operator level, I first ask whether serving is compute-bound or memory-bound. For decode this is often a
 > memory-bandwidth story because of repeated weight and KV-cache movement. For VLMs, the prefill side can also become

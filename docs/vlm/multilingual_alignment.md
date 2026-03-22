@@ -116,11 +116,11 @@ For classification or extraction you may also track F1, exact match, or task-spe
 - OCR-heavy scripts degrade much more than Latin-script inputs
 - multilingual answers are fluent but semantically inconsistent with the image
 
-## Interview framing
+## Practical summary
 
-A strong answer sounds like this:
+A concise summary is:
 
 > Multilingual alignment means more than translating prompts. The model has to preserve the same visual semantics across
 > languages, which I would usually enforce with contrastive image–text alignment plus some form of cross-lingual
-> consistency. For enterprise or European-market settings, I would pay extra attention to document layouts, OCR noise, and
-> script-specific failure modes, because those often break first.
+> consistency. For enterprise or European-market settings, I would pay extra attention to document layouts, OCR noise,
+> and script-specific failure modes, because those often break first.

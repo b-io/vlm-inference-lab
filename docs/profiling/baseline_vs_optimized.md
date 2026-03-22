@@ -74,9 +74,9 @@ python -m vlm_inference_lab.profiling.cuda_runner --source resources/vlm_inferen
 - **Next Optimization**: To further improve, one could use **Shuffle instructions (`__shfl_down_sync`)** to avoid shared
   memory bank conflicts and further reduce latency within a warp.
 
-## Interview Discussion
+## Practical discussion
 
-> **"How do you optimize a GPU workload?"**
+> **How to optimize a GPU workload**
 >
 > In this experiment, I identified that the bottleneck was atomic contention. By switching to a tree-based reduction in
 > shared memory, I reduced the number of global memory atomic operations by a factor of 256. This shifted the bottleneck

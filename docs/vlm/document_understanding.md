@@ -164,7 +164,7 @@ A good document system is not judged by text fluency alone.
 - multi-page leakage or context truncation
 - poor multilingual performance on mixed-language documents
 
-## 9. Interview framing
+## 9. Practical summary
 
 > Document understanding is harder than plain NLP because semantics depends on text, layout, and image evidence jointly.
 > I would think in terms of OCR-based pipelines, layout-aware encoders, OCR-free models, and projector-plus-LLM systems.

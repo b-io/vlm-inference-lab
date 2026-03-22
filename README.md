@@ -14,21 +14,16 @@ hardware execution.
 
 **Key Technical Themes:**
 
-- **Inference Systems
-  **: [Batching policies](docs/inference/batching.md), [KV cache management](docs/inference/kv_cache.md), [advanced serving features](docs/inference/advanced_serving_features.md),
-  and [latency-throughput tradeoffs](docs/inference/latency_vs_throughput.md).
-- **GPU Performance
-  **: [Custom CUDA kernels](resources/vlm_inference_lab/cuda/), [memory-bound vs. compute-bound analysis](docs/profiling/profiling_basics.md).
-- **Multimodal Alignment
-  **: [Shared embedding spaces](docs/vlm/embeddings.md), [cross-modal reasoning architectures](docs/vlm/vlm_basics.md),
-  and [document understanding](docs/vlm/document_understanding.md).
+- **Inference Systems**: [Batching policies](docs/inference/batching.md), [KV cache management](docs/inference/kv_cache.md), [advanced serving features](docs/inference/advanced_serving_features.md), and [latency-throughput tradeoffs](docs/inference/latency_vs_throughput.md).
+- **GPU Performance**: [Custom CUDA kernels](resources/vlm_inference_lab/cuda/), [memory-bound vs. compute-bound analysis](docs/profiling/profiling_basics.md), and low-level execution tradeoffs.
+- **Multimodal Alignment**: [Shared embedding spaces](docs/vlm/embeddings.md), [cross-modal reasoning architectures](docs/vlm/vlm_basics.md), and [document understanding](docs/vlm/document_understanding.md).
 - **Hardware Portability**: Reasoning about [NVIDIA (CUDA) vs. AMD (HIP/ROCm)](docs/cuda/cuda_vs_hip.md) serving.
 
 ## Repository Layout
 
 ```text
 vlm-inference-lab/
-├── docs/                          # Technical notes & Interview discussion points
+├── docs/                          # Technical notes and reference material
 ├── source/
 │   └── vlm_inference_lab/         # Python orchestration & simulation
 ├── resources/
@@ -55,7 +50,7 @@ optimized shared-memory tree reduction.
   optimized_ms=0.8101
   speedup=50.019
   ```
-- **Interview Focus**: Memory hierarchy, bank conflicts, and bandwidth vs. synchronization bottlenecks.
+- **Optimization Focus**: Memory hierarchy, bank conflicts, and bandwidth vs. synchronization bottlenecks.
 - **Read more**: [Baseline vs. Optimized Analysis](docs/profiling/baseline_vs_optimized.md)
 
 ### 2. Serving Simulation: Latency vs. Throughput
@@ -147,10 +142,14 @@ nvcc resources/vlm_inference_lab/cuda/reduction.cu -o reduction.exe
 
 ## Status
 
-✅ **Structured Benchmarking**: Automated Python-CUDA integration via `CudaRunner`.
-✅ **System Modeling**: Arrival/Batching simulation with robust P-metric reporting.
-✅ **Technical Docs**: Concise notes on KV cache, batching, and hardware-aware optimization.
-✅ **Remote Orchestration**: Production-ready Runpod/vLLM benchmark wrappers.
-✅ **Interview Assets
-**: [Documentation map](docs/README.md), [Neural architecture tradeoffs](docs/ml/neural_architecture_tradeoffs.md), [RNN gradient stability](docs/ml/rnn_lstm_gru_and_gradient_stability.md), [VLM architectures](docs/vlm/vlm_basics.md), [Document understanding](docs/vlm/document_understanding.md),
-and [Serving optimizations](docs/inference/advanced_serving_features.md).
+- ✅ **Structured Benchmarking**: Automated Python-CUDA integration via `CudaRunner`.
+- ✅ **System Modeling**: Arrival/batching simulation with robust P-metric reporting.
+- ✅ **Technical Docs**: Concise notes on KV cache, batching, and hardware-aware optimization.
+- ✅ **Remote Orchestration**: Runpod/vLLM benchmark wrappers for remote deployment and measurement.
+- ✅ **Core Reading**:
+  - [Documentation map](docs/README.md)
+  - [Neural architecture tradeoffs](docs/ml/neural_architecture_tradeoffs.md)
+  - [RNN gradient stability](docs/ml/rnn_lstm_gru_and_gradient_stability.md)
+  - [VLM architectures](docs/vlm/vlm_basics.md)
+  - [Document understanding](docs/vlm/document_understanding.md)
+  - [Serving optimizations](docs/inference/advanced_serving_features.md)

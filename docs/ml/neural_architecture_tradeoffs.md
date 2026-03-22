@@ -15,6 +15,9 @@ $$
 
 Here, "systems fit" means latency, memory, throughput, parallelism, and deployability.
 
+For a hardware-aware view of how these architecture choices translate into runtime,
+see [Model complexity, parallelism, and hardware](model_complexity_parallelism_and_hardware.md).
+
 ## Architecture taxonomy
 
 ```mermaid
@@ -325,7 +328,7 @@ MoE increases model capacity without activating all parameters for every token.
 
 ## Architecture choice as a systems decision
 
-A good answer in interview connects the model family to the serving consequences.
+A useful way to compare architectures is to connect the model family to its training and serving consequences.
 
 ### Example reasoning pattern
 
@@ -338,11 +341,11 @@ A good answer in interview connects the model family to the serving consequences
 - A **VLM** may inherit the serving pathologies of both the vision stack and the LLM stack, so architecture choice
   matters twice.
 
-## What to say in interview
+## Concise summary
 
-A concise strong framing is:
+A concise framing is:
 
 > I choose architectures by matching the inductive bias to the data structure and then checking whether the resulting
 > training and serving costs are acceptable. CNNs are strong when locality matters, RNNs when online state matters,
-> Transformers when global context matters, and VLMs when cross-modal grounding matters. The interesting engineering work
-> starts when the best modeling choice conflicts with the best serving choice.
+> Transformers when global context matters, and VLMs when cross-modal grounding matters. The interesting engineering
+> work starts when the best modeling choice conflicts with the best serving choice.

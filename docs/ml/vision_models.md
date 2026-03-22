@@ -220,9 +220,9 @@ The choice affects serving directly:
 - more visual tokens increase attention cost and memory use downstream
 - document VLMs are often harder to serve because they require both high resolution and long textual context
 
-## 12. What to say in interview
+## 12. Concise summary
 
 > CNNs are strong because they encode the right prior for natural images: locality, weight sharing, and hierarchical
-> composition. ViTs are stronger when I want more flexible global context and I have enough data or pretraining. For dense
-> tasks like segmentation or document understanding, I care a lot about not destroying spatial detail too early, so
-> encoder-decoder and multi-scale designs become important.
+> composition. ViTs are stronger when I want more flexible global context and I have enough data or pretraining. For
+> dense tasks like segmentation or document understanding, I care a lot about not destroying spatial detail too early,
+> so encoder-decoder and multi-scale designs become important.

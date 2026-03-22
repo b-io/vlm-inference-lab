@@ -39,9 +39,9 @@ Using `source/vlm_inference_lab/simulation/inference_simulator.py`, we can model
 - **Service Time**: Actual time spent on GPU.
 - **Queue Time**: Time spent waiting to be batched or processed.
 
-## Interview Discussion
+## Practical discussion
 
-> **"How do you reason about latency vs throughput?"**
+> **Reasoning about latency vs throughput**
 >
 > In a production inference system, we can't optimize for both simultaneously. If we want the lowest possible latency,
 > we process requests as they arrive (Batch Size 1), but this is very expensive and inefficient for the GPU. If we want

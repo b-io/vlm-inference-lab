@@ -35,7 +35,7 @@ memory are being spent in a system.
 > I start top-down. First, I use a tool like **NSight Systems** to see the overall timeline. I'm looking for 'gaps'
 > where the GPU is idle, which signals a CPU bottleneck or high H2D copy time.
 >
-> If the GPU is busy but slow, I'll use **NSight Compute** to analyze the most expensive kernels. I'll check the *
-*roofline model** to see if we're hitting a memory bandwidth ceiling or a compute ceiling. For most VLM operators (like
-> softmax or layernorm), the bottleneck is usually memory bandwidth, which is why I focus on optimizations like **operator
-fusion** to reduce redundant memory reads.
+> If the GPU is busy but slow, I'll use **NSight Compute** to analyze the most expensive kernels. I'll check the
+> **roofline model** to see if we're hitting a memory bandwidth ceiling or a compute ceiling. For most VLM operators
+> (like softmax or layernorm), the bottleneck is usually memory bandwidth, which is why I focus on optimizations like
+> **operator fusion** to reduce redundant memory reads.

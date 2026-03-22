@@ -40,8 +40,8 @@ When deploying Vision-Language Models (VLMs), the hardware choice impacts the se
 > **"How would you think about portability across H100 and MI300X?"**
 >
 > From a software engineering perspective, we want to avoid hardware lock-in. For high-level orchestration, we rely on
-> frameworks like PyTorch or Triton that abstract the backend. For custom kernels, we can use HIP to write code that runs
-> on both.
+> frameworks like PyTorch or Triton that abstract the backend. For custom kernels, we can use HIP to write code that
+> runs on both.
 >
 > From a systems perspective, the MI300X's larger memory capacity (192GB) is very attractive for VLMs because it allows
 > for much larger batch sizes or longer context windows (KV cache) on a single node compared to the H100. However, the

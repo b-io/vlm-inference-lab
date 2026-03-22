@@ -1,7 +1,7 @@
 # Advanced Serving Features: Prefix Caching, Chunked Prefill, Preemption, and Runtime Tradeoffs
 
-The repo already explains batching and KV cache. This document fills the next layer of serving concepts that often come
-up in senior inference interviews.
+The repository already explains batching and KV cache. This document covers the next layer of serving concepts that
+matter in practical inference systems.
 
 ## 1. Prefix caching
 
@@ -192,11 +192,11 @@ flowchart LR
     L --> M[Response complete]
 ```
 
-## Interview framing
+## Practical summary
 
-A strong answer sounds like this:
+A concise summary is:
 
 > After batching and KV cache, the next serving concepts I think about are prefix caching, chunked prefill, and
-> preemption. Prefix caching reduces repeated prefill work, chunked prefill protects interactive latency when prompts are
-> long, and preemption is a scheduler tool for dealing with contention and memory pressure. I relate all of them back to
-> TTFT, TPOT, ITL, E2E latency, and especially goodput under SLOs.
+> preemption. Prefix caching reduces repeated prefill work, chunked prefill protects interactive latency when prompts
+> are long, and preemption is a scheduler tool for dealing with contention and memory pressure. I relate all of them
+> back to TTFT, TPOT, ITL, E2E latency, and especially goodput under SLOs.

@@ -44,7 +44,8 @@ the **Modality Gap**.
 > **"How do image and text embeddings relate in a VLM?"**
 >
 > It depends on the architecture. In retrieval-style models like CLIP, we use a dual-encoder setup where both modalities
-> are projected into a shared space, and we measure alignment using cosine similarity. This is great for scale and speed.
+> are projected into a shared space, and we measure alignment using cosine similarity. This is great for scale and
+> speed.
 >
 > However, for modern generative VLMs like LLaVA, we use a projection layer to map visual features into the LLM's token
 > space. Here, 'alignment' means the LLM can interpret visual tokens as if they were words. This enables complex

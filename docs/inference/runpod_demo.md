@@ -172,8 +172,8 @@ Use this to deploy vLLM from your local machine to a **generic GPU VM/pod** (e.g
 
 > [!TIP]
 > **SSH Flexibility**: The orchestrator is designed to work even if direct TCP SSH or SCP/SFTP are unavailable. As long
-> as **Proxied SSH** (`ssh.runpod.io`) is configured and working, the script can create remote directories and deploy the
-> startup script using **SSH-only file creation** (Base64-encoded transfer).
+> as **Proxied SSH** (`ssh.runpod.io`) is configured and working, the script can create remote directories and deploy
+> the startup script using **SSH-only file creation** (Base64-encoded transfer).
 
 > [!WARNING]
 > **Managed Service Protection**: If the orchestrator detects an already-running vLLM service, it will refuse to mutate

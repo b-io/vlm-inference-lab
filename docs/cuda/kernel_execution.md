@@ -36,6 +36,6 @@ simultaneously.
 > and each block contains many threads. The GPU schedules these blocks across its Streaming Multiprocessors (SMs).
 >
 > Inside an SM, threads are grouped into **warps of 32**. This is the fundamental unit of scheduling. The most important
-> thing to remember is that threads in a warp execute the same instruction. If your code has lots of branches (divergence)
-> or random memory accesses (non-coalesced), you'll lose performance because the hardware can't efficiently group the
-> work.
+> thing to remember is that threads in a warp execute the same instruction. If your code has lots of branches
+> (divergence) or random memory accesses (non-coalesced), you'll lose performance because the hardware can't efficiently
+> group the work.
