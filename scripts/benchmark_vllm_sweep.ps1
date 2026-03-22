@@ -3,8 +3,19 @@
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-$BASE_URL = $args[0]
-if (-not $BASE_URL) { Write-Error "Required base_url"; exit 1 }
+function Normalize-RunpodBaseUrl {
+    param([string]$Url)
+    $Url = $Url.TrimEnd('/')
+    if ($Url.EndsWith('/v1')) {
+        $Url = $Url.Substring(0, $Url.Length - 3)
+    }
+    return $Url
+}
+
+$ORIGINAL_URL = $args[0]
+if (-not $ORIGINAL_URL) { Write-Error "Required base_url"; exit 1 }
+
+$BASE_URL = Normalize-RunpodBaseUrl $ORIGINAL_URL
 
 $MODEL_ID = $args[1]
 if (-not $MODEL_ID) { Write-Error "Required model_id"; exit 1 }
@@ -22,10 +33,23 @@ $OUTPUT_FILE = "$OUTPUT_DIR/vllm_sweep_$TIMESTAMP.json"
 
 Write-Host "--------------------------------------------------------"
 Write-Host "Starting vLLM Professional Parameter Sweep"
-Write-Host "URL         : $BASE_URL"
-Write-Host "Model       : $MODEL_ID"
+Write-Host "Configured URL : $ORIGINAL_URL"
+Write-Host "Normalized URL : $BASE_URL"
+Write-Host "Model          : $MODEL_ID"
 Write-Host "Output      : $OUTPUT_FILE"
 Write-Host "--------------------------------------------------------"
+
+# Check for vLLM sweep compatibility
+$HELP_TEXT = vllm bench sweep serve --help 2>&1
+if ($HELP_TEXT -match "--base-url" -and $HELP_TEXT -match "--serve-params" -and $HELP_TEXT -match "--bench-params") {
+    Write-Host "vLLM sweep CLI compatibility check passed."
+} else {
+    Write-Error "Incompatible vLLM version detected for remote sweep."
+    Write-Host "The current 'vllm bench sweep serve' command does not appear to support --base-url or JSON parameter files in this version."
+    Write-Host "The repo's remote benchmarking path is production-ready for 'bench serve', while remote sweep behavior is version-sensitive."
+    Write-Host "Please use a compatible vLLM version (0.4.0+) or stick to 'bench serve' for stable remote benchmarking."
+    exit 1
+}
 
 # Generate temporary JSON parameter files
 $SERVE_PARAMS_FILE = "$OUTPUT_DIR/serve_params_$TIMESTAMP.json"

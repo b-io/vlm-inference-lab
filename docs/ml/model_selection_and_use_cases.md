@@ -387,3 +387,8 @@ The main point is not the code. It is that model selection is always task- and c
 - On text and long sequences, Transformers dominate when enough data and compute are available.
 - On images, CNNs encode locality well; ViTs become very strong with scale and pretraining.
 - Simpler models are often better under limited data, strict latency, or strong interpretability requirements.
+
+
+## 10) Related notes
+
+For a more architecture-first summary across MLPs, CNNs, RNNs, Transformers, GNNs, diffusion backbones, and MoE, see [Neural architecture tradeoffs](neural_architecture_tradeoffs.md).

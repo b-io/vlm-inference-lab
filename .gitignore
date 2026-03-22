@@ -25,10 +25,6 @@ results/
 .env.runpod
 .env.lambda
 
-# Results from remote benchmarks
-results/remote/*.json
-results/remote/*.csv
-
 
 # PYTHON #################################################################################
 

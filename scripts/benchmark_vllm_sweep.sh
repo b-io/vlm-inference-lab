@@ -4,7 +4,17 @@ set -euo pipefail
 # Run vLLM parameter sweep remotely
 # Usage: ./benchmark_vllm_sweep.sh <base_url> <model_id> [tier] [extra_args]
 
-BASE_URL=${1:?Required base_url}
+normalize_runpod_base_url() {
+    local url="$1"
+    url="${url%/}"
+    if [[ "$url" == */v1 ]]; then
+        url="${url%/v1}"
+    fi
+    echo "$url"
+}
+
+ORIGINAL_URL=${1:?Required base_url}
+BASE_URL=$(normalize_runpod_base_url "$ORIGINAL_URL")
 MODEL_ID=${2:?Required model_id}
 TIER=${3:-sweep-small}
 shift $(( $# >= 3 ? 3 : $# ))
@@ -18,10 +28,24 @@ OUTPUT_FILE="$OUTPUT_DIR/vllm_sweep_$TIMESTAMP.json"
 
 echo "--------------------------------------------------------"
 echo "Starting vLLM Professional Parameter Sweep"
-echo "URL         : $BASE_URL"
-echo "Model       : $MODEL_ID"
+echo "Configured URL : $ORIGINAL_URL"
+echo "Normalized URL : $BASE_URL"
+echo "Model          : $MODEL_ID"
 echo "Output      : $OUTPUT_DIR"
 echo "--------------------------------------------------------"
+
+# Check for vLLM sweep compatibility
+if vllm bench sweep serve --help 2>&1 | grep -q "--base-url" && \
+   vllm bench sweep serve --help 2>&1 | grep -q "--serve-params" && \
+   vllm bench sweep serve --help 2>&1 | grep -q "--bench-params"; then
+    echo "vLLM sweep CLI compatibility check passed."
+else
+    echo "Error: Incompatible vLLM version detected for remote sweep."
+    echo "The current 'vllm bench sweep serve' command does not appear to support --base-url or JSON parameter files."
+    echo "The repo's remote benchmarking path is production-ready for 'bench serve', while remote sweep behavior is version-sensitive."
+    echo "Please use a compatible vLLM version (0.4.0+) or stick to 'bench serve' for stable remote benchmarking."
+    exit 1
+fi
 
 # Generate temporary JSON parameter files
 SERVE_PARAMS_FILE="$OUTPUT_DIR/serve_params_$TIMESTAMP.json"

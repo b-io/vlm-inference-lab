@@ -1,173 +1,201 @@
 # Vision Models
 
-Vision models learn representations from images or videos. The core structural prior is that nearby pixels are more related than distant pixels, and that patterns such as edges, corners, and textures recur across locations.
+Vision models learn representations from images or videos. The key design choice is how strongly the architecture should encode spatial locality, translation structure, hierarchy, and global context.
 
-## Problem formulation
+## 1. Why vision needs structure
 
-Given an image $x \in \mathbb{R}^{H \times W \times C}$, common tasks are:
-- **classification**: predict a class label
-- **detection**: localize and classify objects
-- **segmentation**: predict labels for pixels or regions
-- **representation learning**: produce embeddings for retrieval or downstream tasks
+An image is not an arbitrary vector. It has two-dimensional geometry:
 
-The central question is how to exploit spatial structure efficiently.
-
-## Convolutional Neural Networks (CNNs)
-
-A convolution applies a small kernel across spatial positions with shared weights.
-
-For a 2D input, one output channel is:
 $$
-y_{i,j} = \sum_{u,v,c} K_{u,v,c} \, x_{i+u, j+v, c}.
+x \in \mathbb{R}^{H \times W \times C}.
 $$
 
-### What convolution tries to solve
+A good vision architecture should answer four questions:
+- how to extract local patterns
+- how to build larger receptive fields
+- how to preserve or recover spatial detail
+- how to mix local and global context
 
-A dense layer over all pixels would ignore image locality and require too many parameters. Convolution imposes two useful assumptions:
-- **local connectivity**: local neighborhoods matter most for local patterns
-- **weight sharing**: the same detector should work at many image positions
+## 2. CNNs: the classic vision prior
 
-### Why CNNs work well for vision
+A convolutional layer applies a local kernel everywhere:
 
-- far fewer parameters than fully connected image models
-- translation-sensitive local feature extraction
-- hierarchical composition: edges $\to$ textures $\to$ parts $\to$ objects
-- strong inductive bias for natural images
+$$
+y_{i,j,k} = \sum_{u,v,c} K_{u,v,c,k}\, x_{i+u, j+v, c}.
+$$
 
-### Typical ingredients
+### Why CNNs work
+- **locality**: nearby pixels matter for local patterns
+- **weight sharing**: the same feature detector can be reused at many positions
+- **hierarchy**: edges $\to$ textures $\to$ parts $\to$ objects
 
-- **convolution**: local feature extraction
-- **nonlinearity**: usually ReLU-like activations
-- **pooling or striding**: reduce resolution and enlarge receptive field
-- **normalization**: stabilize optimization
+### Core tradeoff
 
-## Receptive field
+A CNN is highly sample-efficient on natural images, but its strong locality bias means long-range interactions are indirect unless depth or attention is added.
 
-The receptive field of a unit is the region of the input that can affect it.
+## 3. Receptive field and downsampling
 
-Why it matters:
-- shallow small-kernel models capture only local detail
-- deeper models or downsampling increase access to larger structures
-- many vision tasks require both local detail and global context
+The receptive field is the input region that can affect a feature.
 
-## Pooling and striding
+### Why it matters
+- small receptive field preserves detail but misses global structure
+- large receptive field captures objects and layout but may blur fine structure
 
-Pooling or strided convolutions downsample feature maps.
+### Pooling / striding
 
-### What they try to solve
+Downsampling increases the effective receptive field and reduces compute, but it loses spatial resolution. This is good for classification, but dangerous for segmentation, OCR, and document understanding.
 
-- reduce computation and memory
-- increase receptive field
-- provide a degree of local invariance
+## 4. Residual CNNs
 
-### Tradeoff
+Residual blocks use skip connections:
 
-Downsampling improves efficiency and abstraction, but loses precise spatial detail. This matters for dense prediction tasks like segmentation.
-
-## Residual networks
-
-Residual blocks learn perturbations of the identity:
 $$
 y = x + F(x).
 $$
 
-### What they try to solve
+They improve gradient flow and enable much deeper networks.
 
-Deep CNNs become hard to optimize. Residual connections provide shorter gradient paths and make very deep models train reliably.
+```mermaid
+flowchart LR
+    X[input] --> C1[conv / norm / activation]
+    C1 --> C2[conv / norm]
+    X --> ADD[(+)]
+    C2 --> ADD
+    ADD --> Y[output]
+```
 
 ### Why they matter
+- stabilize optimization
+- allow deeper feature hierarchies
+- strong practical default for vision backbones
 
-They allow deeper architectures without severe degradation in optimization quality.
+## 5. CNN design patterns
 
-## Vision Transformers (ViTs)
+### 5.1 1x1 convolutions
 
-A Vision Transformer splits an image into patches, embeds each patch as a token, adds positional information, and applies Transformer layers.
+A $1 \times 1$ convolution mixes channels without expanding spatial support. It is useful for bottlenecks and channel projection.
 
-If the patch size is $P \times P$, the number of patches is approximately
+### 5.2 Depthwise separable convolutions
+
+Standard convolution is expensive. Depthwise separable convolution factorizes it into:
+- depthwise spatial filtering per channel
+- pointwise channel mixing
+
+This reduces compute significantly and is common in mobile models.
+
+### 5.3 Dilated convolutions
+
+Dilated convolutions increase receptive field without extra pooling:
+
 $$
-N = \frac{H}{P}\frac{W}{P}.
+y_{i,j} = \sum_{u,v} K_{u,v} x_{i+du, j+dv}.
 $$
 
-### What ViTs try to solve
+Useful for segmentation and dense prediction, but can create gridding artifacts if overused.
 
-CNNs bake in locality strongly. ViTs relax that bias and use attention to model longer-range interactions more directly.
+### 5.4 U-Net and encoder-decoder designs
 
-### Why they can work well
+U-Net uses a contracting path plus an expanding path with skip connections. It is ideal when you need both semantics and precise localization.
 
-- flexible global context modeling
-- strong scaling behavior with data and model size
-- natural compatibility with multimodal token-based architectures
+```mermaid
+flowchart TD
+    A[input image] --> B[encoder]
+    B --> C[bottleneck]
+    C --> D[decoder]
+    B --> E[skip features]
+    E --> D
+    D --> F[pixel-level output]
+```
+
+### 5.5 Feature pyramids (FPN)
+
+Detection and document analysis often need multi-scale features. FPN combines coarse semantic features with fine spatial features across scales.
+
+## 6. Vision Transformers (ViT)
+
+A ViT divides the image into patches and treats them as tokens.
+
+If the patch size is $P \times P$, then:
+
+$$
+N = \frac{H}{P}\frac{W}{P}
+$$
+
+patch tokens are produced.
+
+### Why ViTs work
+- direct global interaction through attention
+- strong scaling with data and pretraining
+- natural compatibility with multimodal stacks
 
 ### Main tradeoff
+- weaker built-in locality prior than CNNs
+- token count can become large at high resolution
+- often needs more pretraining or augmentation than CNNs from scratch
 
-ViTs usually need more data or stronger pretraining to match CNN sample efficiency on moderate datasets, because they impose a weaker spatial inductive bias.
+## 7. Hierarchical Transformers: Swin-style idea
 
-## CNN vs ViT
+Pure global attention over all image patches is expensive. Hierarchical transformers reduce cost by using windows and progressively downsampling features.
 
-| Model | Strong prior | Main advantage | Main limitation |
-|---|---|---|---|
-| CNN | Locality + translation-related weight sharing | Sample-efficient and efficient on images | Global interactions are indirect unless architecture is enlarged |
-| ViT | Much weaker image-specific prior | Direct global interactions, strong scaling with pretraining | More data hungry, attention cost can be high |
+### Why this helps
+- more scalable than full global attention on high-resolution images
+- retains some of the multi-scale structure that CNNs naturally capture
 
-## Detection and segmentation
+## 8. CNN vs ViT
 
-### Detection
+| Question | CNN answer | ViT answer |
+|---|---|---|
+| What prior is encoded? | Strong locality and translation reuse | More flexible global mixing |
+| Data efficiency from scratch | Usually better | Usually worse without large pretraining |
+| Global context | Indirect unless depth/attention is added | Direct via self-attention |
+| High-resolution dense tasks | Often efficient and strong | Possible, but token count matters |
+| Fit for multimodal stacks | Good as visual encoder | Very natural with Transformer/LLM stacks |
 
-The task is to predict bounding boxes and classes.
+## 9. Architecture choices by task
 
-Typical architectural idea:
-- backbone extracts features
-- neck/fusion stage aggregates multi-scale features
-- detection head predicts boxes and classes
+### Image classification
+- CNNs remain very strong defaults
+- ViTs become especially attractive with enough pretraining data
 
-Why multi-scale features matter: objects vary strongly in size.
+### Object detection
+- often uses CNN or hierarchical Transformer backbones plus FPN-style multi-scale features
 
-### Segmentation
+### Semantic / instance segmentation
+- U-Net, DeepLab-style, or encoder-decoder architectures are common because they preserve and recover spatial detail
 
-The task is to label pixels or regions.
+### OCR and document understanding
+- high resolution and layout sensitivity matter
+- multi-scale features matter
+- text can be tiny, so naive downsampling hurts
 
-Architectures often use encoder-decoder structures with skip connections so the model combines coarse semantic information with fine spatial detail.
+### Video understanding
+- options include 2D CNN + temporal head, 3D CNNs, temporal attention, or factorized space-time Transformers
 
-## Video models
+## 10. Best practices
 
-Videos add a temporal axis. Common options:
-- 3D CNNs over space and time
-- CNN backbone + temporal model
-- Transformer-style spatiotemporal attention
+### For CNN-heavy stacks
+- avoid too much early downsampling if small text or fine detail matters
+- use residual connections for depth
+- use feature pyramids or skip connections for dense outputs
+- prefer depthwise-separable blocks when mobile efficiency matters
 
-The main challenge is balancing temporal context against cost.
+### For ViT-heavy stacks
+- pay attention to patch size because it trades spatial detail against token count
+- use hierarchical designs for very high-resolution inputs
+- expect stronger dependence on pretraining and data scale
 
-## Why ReLU-like activations are common in CNNs
+## 11. Vision architectures in VLMs
 
-CNNs apply the same feature detector at many spatial locations. ReLU is attractive because it is cheap, preserves gradient flow on the positive side, and promotes sparse feature responses. This often matches the intuition that a feature detector should activate strongly only where a pattern is present.
+Most VLMs use one of these visual encoders:
+- CNN or ResNet-style backbone
+- ViT / hierarchical Transformer backbone
+- document-specific encoder with layout sensitivity
 
-## Minimal code sketches
+The choice affects serving directly:
+- more patches or higher resolution increase visual token count
+- more visual tokens increase attention cost and memory use downstream
+- document VLMs are often harder to serve because they require both high resolution and long textual context
 
-### CNN classifier
+## 12. What to say in interview
 
-```python
-x = conv(x)
-x = relu(x)
-x = pool(x)
-x = conv(x)
-x = relu(x)
-logits = linear(flatten(x))
-```
-
-### ViT-style model
-
-```python
-patches = patch_embed(image)
-x = patches + pos_embed
-for block in transformer_blocks:
-    x = block(x)
-logits = classifier(x[:, 0])
-```
-
-## What to remember
-
-- CNNs solve vision by exploiting locality and weight sharing
-- Deeper CNNs increase receptive field and abstraction
-- Residual connections make very deep vision models train well
-- ViTs treat image patches as tokens and trade stronger priors for more flexible global modeling
-- Vision architecture choice is largely a question of **inductive bias, scale, and compute budget**
+> CNNs are strong because they encode the right prior for natural images: locality, weight sharing, and hierarchical composition. ViTs are stronger when I want more flexible global context and I have enough data or pretraining. For dense tasks like segmentation or document understanding, I care a lot about not destroying spatial detail too early, so encoder-decoder and multi-scale designs become important.

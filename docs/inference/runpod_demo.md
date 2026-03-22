@@ -54,7 +54,7 @@ The most reliable way to start is using the Runpod UI:
 - You need the script to manage the lifecycle of the vLLM process/container.
 
 ### Connection Strategy
-- **HTTP Benchmark/Readiness**: Always use the Runpod proxy base URL (`https://<pod-id>-8000.proxy.runpod.net/v1`).
+- **HTTP Benchmark/Readiness**: Always use the Runpod proxy base URL (`https://<pod-id>-8000.proxy.runpod.net/v1`). The professional vLLM benchmark wrappers automatically normalize a trailing `/v1` from `RUNPOD_BASE_URL` and pass explicit endpoints (e.g., `/v1/completions`).
 - **Proxied SSH**: Sufficient for shell access and remote file creation if port 22 is blocked.
 - **Direct TCP SSH**: Preferred for faster SCP/SFTP transfers if available.
 
@@ -76,7 +76,11 @@ The orchestrator and benchmark scripts support **tiers** to provide sensible def
 
 For serious characterization, this repo orchestrates **vLLM's native benchmark tools** (`vllm bench serve` and `vllm bench sweep serve`).
 
-**Note:** This path requires `vllm` to be installed in your local environment (e.g., `pip install vllm`). The scripts will call the `vllm` CLI to run the benchmark against the remote endpoint.
+**Note on Stability:** 
+- `vllm bench serve` is the **stable, validated path** for remote benchmarking in this repo.
+- `vllm bench sweep serve` is supported but should be treated as **version-sensitive** due to evolving vLLM CLI arguments. The sweep wrapper includes a fail-fast compatibility check to ensure your local vLLM version supports the required `--base-url` and JSON parameter grid.
+
+**Installation:** This path requires `vllm` to be installed in your local environment (e.g., `pip install vllm`). The scripts will call the `vllm` CLI to run the benchmark against the remote endpoint.
 
 Industrial-grade metrics provided by vLLM:
 - **TTFT**: Time To First Token

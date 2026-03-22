@@ -4,7 +4,17 @@ set -euo pipefail
 # Run vLLM's internal benchmark tools remotely
 # Usage: ./benchmark_vllm_bench.sh <base_url> <model_id> [tier] [extra_args]
 
-BASE_URL=${1:?Required base_url}
+normalize_runpod_base_url() {
+    local url="$1"
+    url="${url%/}"
+    if [[ "$url" == */v1 ]]; then
+        url="${url%/v1}"
+    fi
+    echo "$url"
+}
+
+ORIGINAL_URL=${1:?Required base_url}
+BASE_URL=$(normalize_runpod_base_url "$ORIGINAL_URL")
 MODEL_ID=${2:?Required model_id}
 TIER=${3:-smoke}
 shift $(( $# >= 3 ? 3 : $# ))
@@ -35,8 +45,9 @@ OUTPUT_FILE="$OUTPUT_DIR/vllm_bench_$TIMESTAMP.json"
 
 echo "--------------------------------------------------------"
 echo "Starting vLLM Professional Benchmark"
-echo "URL         : $BASE_URL"
-echo "Model       : $MODEL_ID"
+echo "Configured URL : $ORIGINAL_URL"
+echo "Normalized URL : $BASE_URL"
+echo "Model          : $MODEL_ID"
 echo "Tier        : $TIER"
 echo "Requests    : $NUM_REQUESTS"
 echo "Concurrency : $CONCURRENCY"
