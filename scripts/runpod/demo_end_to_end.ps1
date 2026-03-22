@@ -1,9 +1,6 @@
 # scripts/runpod/demo_end_to_end.ps1
 # Refactored Runpod Orchestrator supporting 'existing' and 'generic' modes.
-# Now with SSH bootstrapping, managed-instance detection, and SCP fallback.
-
-# Support UTF-8 emojis in PowerShell console
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# Supports Proxied SSH fallback, managed-instance detection, and SCP fallback.
 
 # 1. Load Environment Variables from .env.runpod
 $EnvFile = ".env.runpod"
@@ -31,7 +28,7 @@ if (-not $env:MODEL_ID) { Write-Error "MODEL_ID is required"; exit 1 }
 # New Configuration Variables
 $SSH_STRATEGY = if ($env:RUNPOD_SSH_MODE) { $env:RUNPOD_SSH_MODE } else { "auto" }
 $PROXY_SSH_TARGET = $env:RUNPOD_PROXY_SSH_TARGET
-$ALLOW_MUTATION = if ($env:RUNPOD_ALLOW_MANAGED_INSTANCE_MUTATION) { [System.Convert]::ToBoolean($env:RUNPOD_ALLOW_MANAGED_INSTANCE_MUTATION) } else { $false }
+$ALLOW_MUTATION = if ($env:RUNPOD_ALLOW_MANAGED_INSTANCE_MUTATION -eq "true") { $true } else { $false }
 
 # Helper to validate RUNPOD_BASE_URL
 function Assert-ValidRunpodBaseUrl($url, $mode) {
@@ -45,10 +42,6 @@ function Assert-ValidRunpodBaseUrl($url, $mode) {
             exit 1
         }
     }
-    
-    if ($url -notlike "*.proxy.runpod.net*" -and $url -notlike "*localhost*" -and $url -notlike "*127.0.0.1*") {
-        Write-Warning "RUNPOD_BASE_URL ($url) does not appear to be a standard Runpod proxy URL (*.proxy.runpod.net)."
-    }
 }
 
 # Helper to show SSH troubleshooting
@@ -57,14 +50,12 @@ function Show-SshTroubleshooting($Message, $SshKey, $Strategy) {
     Write-Host $Message -ForegroundColor Red
     Write-Host ""
     Write-Host "Troubleshooting Runpod SSH (Strategy: $Strategy):"
-    Write-Host "1. 'generic' mode requires DIRECT TCP SSH access for SCP/SFTP support."
-    Write-Host "2. The Runpod 'ssh.runpod.io' shortcut (Proxied SSH) IS NOT SUFFICIENT for SCP/SFTP."
-    Write-Host "3. If direct TCP SSH failed, you may need to bootstrap 'sshd' via Proxied SSH."
-    Write-Host "4. Use 'RUNPOD_PROXY_SSH_TARGET' in .env.runpod (e.g., j0axhra8c4u1mi-64411b50@ssh.runpod.io)."
-    Write-Host "5. Ensure direct TCP host/port are correct from the Connect tab ('SSH over exposed TCP')."
-    Write-Host "6. Ensure your SSH key ($SshKey) is correctly configured."
+    Write-Host "1. 'generic' mode requires shell access for deployment."
+    Write-Host "2. Proxied SSH (ssh.runpod.io) is supported even if direct TCP SSH is blocked."
+    Write-Host "3. Ensure 'RUNPOD_PROXY_SSH_TARGET' is set in .env.runpod (e.g. user@ssh.runpod.io)."
+    Write-Host "4. If direct TCP failed, ensure your SSH key ($SshKey) is correctly configured."
+    Write-Host "5. If you already have a pod running vLLM, use 'RUNPOD_MODE=existing' instead."
     Write-Host ""
-    Write-Host "If you already have a pod running vLLM, use 'RUNPOD_MODE=existing' instead."
 }
 
 # Helper to detect managed instance
@@ -76,10 +67,10 @@ function Get-IsManagedInstance($baseUrl, $remoteTarget, $sshKey, $sshPort) {
         if ($resp.data) { return $true }
     } catch {}
 
-    # Check 2: Remote Process Check
-    if ($remoteTarget) {
+    # Check 2: Remote Process Check (if direct SSH works)
+    if ($remoteTarget -and $sshKey) {
         $checkCmd = "pgrep -f 'vllm serve' || echo 'NOT_FOUND'"
-        $out = ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no -i $sshKey -p $sshPort $remoteTarget $checkCmd
+        $out = ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no -i $sshKey -p $sshPort $remoteTarget $checkCmd 2>$null
         if ($out -ne "NOT_FOUND" -and $out -match "\d+") { return $true }
     }
     
@@ -97,7 +88,9 @@ Write-Host "SSH Strategy: $SSH_STRATEGY"
 Write-Host "--------------------------------------------------------"
 
 if ($MODE -eq "generic") {
-    if (-not $env:RUNPOD_SSH_HOST) { Write-Error "RUNPOD_SSH_HOST is required for generic mode"; exit 1 }
+    if (-not $env:RUNPOD_SSH_HOST -and $SSH_STRATEGY -ne "proxied") { 
+        Write-Error "RUNPOD_SSH_HOST is required for generic mode unless RUNPOD_SSH_MODE=proxied"; exit 1 
+    }
     if (-not $env:RUNPOD_SSH_USER) { $env:RUNPOD_SSH_USER = "root" }
     if (-not $env:RUNPOD_SSH_PORT) { $env:RUNPOD_SSH_PORT = "22" }
     if (-not $env:RUNPOD_SSH_KEY_PATH) { $env:RUNPOD_SSH_KEY_PATH = "~/.ssh/id_ed25519" }
@@ -125,84 +118,86 @@ if ($IS_MANAGED) {
 if ($MODE -eq "generic") {
     Write-Host "--- Stage: Remote SSH Deployment ---"
     
-    $DIRECT_SSH_OK = $false
-    $SCP_OK = $false
-
-    # Step 4.1: Try Direct SSH Preflight
-    Write-Host "Direct SSH Preflight Check: Connecting to $REMOTE_HOST (Port: $SSH_PORT)..."
-    ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i $SSH_KEY -p $SSH_PORT $REMOTE_HOST "echo SSH_OK"
-    if ($LASTEXITCODE -eq 0) {
-        $DIRECT_SSH_OK = $true
-        Write-Host "Direct SSH connection verified."
+    $DEPLOY_TARGET = $null
+    $DEPLOY_SSH_OPTS = @("-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=no")
+    $USE_SCP = $false
+    $DIAGNOSTICS = @{
+        "Direct SSH"  = "unavailable"
+        "Proxied SSH" = "unavailable"
+        "SCP Support" = "unavailable"
+        "Fallback Mode" = "none"
     }
 
-    # Step 4.2: Try Bootstrap if Direct failed and strategy allows
-    if (-not $DIRECT_SSH_OK -and ($SSH_STRATEGY -eq "auto" -or $SSH_STRATEGY -eq "proxied")) {
-        if (-not $PROXY_SSH_TARGET) {
-            Write-Host "Direct SSH failed and RUNPOD_PROXY_SSH_TARGET is not configured. Cannot bootstrap." -ForegroundColor Yellow
-        } else {
-            Write-Host "Attempting SSH Bootstrap via Proxied SSH ($PROXY_SSH_TARGET)..."
-            $Pub_Key = ""
-            $Pub_Key_Path = "$SSH_KEY.pub"
-            if (Test-Path $Pub_Key_Path) { $Pub_Key = Get-Content $Pub_Key_Path -Raw }
+    # Decide on transport
+    if ($SSH_STRATEGY -eq "proxied") {
+        if (-not $PROXY_SSH_TARGET) { Write-Error "RUNPOD_PROXY_SSH_TARGET is required for proxied strategy"; exit 1 }
+        $DEPLOY_TARGET = $PROXY_SSH_TARGET
+        $DIAGNOSTICS["Proxied SSH"] = "available"
+        Write-Host "Using Proxied SSH transport: $DEPLOY_TARGET"
+    } else {
+        # Try Direct first
+        Write-Host "Attempting Direct SSH Preflight ($REMOTE_HOST)..."
+        ssh @DEPLOY_SSH_OPTS -i $SSH_KEY -p $SSH_PORT $REMOTE_HOST "echo SSH_OK" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            $DEPLOY_TARGET = $REMOTE_HOST
+            $DEPLOY_SSH_OPTS += @("-i", $SSH_KEY, "-p", $SSH_PORT)
+            $DIAGNOSTICS["Direct SSH"] = "available"
+            Write-Host "Direct SSH verified."
             
-            $Bootstrap_Script = Get-Content "scripts/runpod/enable_sshd.sh" -Raw
-            # We use a heredoc-like approach to send the script over proxied SSH
-            $Encoded_Script = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($Bootstrap_Script))
-            $Remote_Init = "echo '$Encoded_Script' | base64 -d > /tmp/bootstrap.sh && bash /tmp/bootstrap.sh '$Pub_Key'"
-            
-            ssh -o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=no $PROXY_SSH_TARGET $Remote_Init
+            # Try SCP preflight if direct SSH works
+            $TempFile = [System.IO.Path]::GetTempFileName()
+            "SCP_TEST" | Out-File -FilePath $TempFile -Encoding ASCII
+            scp @DEPLOY_SSH_OPTS -P $SSH_PORT $TempFile "${REMOTE_HOST}:/tmp/scp_test.tmp" 2>$null
             if ($LASTEXITCODE -eq 0) {
-                Write-Host "Bootstrap successful. Retrying direct SSH..."
-                ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i $SSH_KEY -p $SSH_PORT $REMOTE_HOST "echo SSH_OK"
-                if ($LASTEXITCODE -eq 0) { $DIRECT_SSH_OK = $true; Write-Host "Direct SSH now verified." }
+                $USE_SCP = $true
+                $DIAGNOSTICS["SCP Support"] = "available"
+                ssh @DEPLOY_SSH_OPTS $REMOTE_HOST "rm /tmp/scp_test.tmp"
+                Write-Host "SCP transfer verified."
             } else {
-                Write-Host "Bootstrap via proxied SSH failed." -ForegroundColor Red
+                $DIAGNOSTICS["Fallback Mode"] = "SSH-only file creation"
+                Write-Host "SCP failed. Will use SSH-only fallback." -ForegroundColor Yellow
+            }
+            Remove-Item $TempFile
+        } elseif ($SSH_STRATEGY -eq "auto" -and $PROXY_SSH_TARGET) {
+            Write-Host "Direct SSH failed. Attempting Proxied SSH fallback ($PROXY_SSH_TARGET)..."
+            ssh @DEPLOY_SSH_OPTS $PROXY_SSH_TARGET "echo SSH_OK" 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                $DEPLOY_TARGET = $PROXY_SSH_TARGET
+                $DIAGNOSTICS["Proxied SSH"] = "available"
+                $DIAGNOSTICS["Fallback Mode"] = "SSH-only file creation"
+                Write-Host "Proxied SSH verified."
             }
         }
     }
 
-    if (-not $DIRECT_SSH_OK) {
-        Show-SshTroubleshooting "Error: SSH connectivity failed to $REMOTE_HOST" $SSH_KEY $SSH_STRATEGY
+    Write-Host "`nConnection Summary:"
+    $DIAGNOSTICS.GetEnumerator() | ForEach-Object { Write-Host "  $($_.Key): $($_.Value)" }
+    Write-Host ""
+
+    if (-not $DEPLOY_TARGET) {
+        Show-SshTroubleshooting "Error: SSH connectivity failed." $SSH_KEY $SSH_STRATEGY
         exit 1
     }
 
-    # Step 4.3: SCP Preflight
-    Write-Host "SCP Preflight Check..."
-    $TempFile = [System.IO.Path]::GetTempFileName()
-    "SCP_TEST" | Out-File -FilePath $TempFile -Encoding ASCII
-    $RemoteTemp = "~/scp_test_$(Get-Random).tmp"
-    
-    scp -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i $SSH_KEY -P $SSH_PORT $TempFile "${REMOTE_HOST}:${RemoteTemp}"
-    if ($LASTEXITCODE -eq 0) {
-        $SCP_OK = $true
-        ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i $SSH_KEY -p $SSH_PORT $REMOTE_HOST "rm -f $RemoteTemp"
-        Write-Host "SCP transfer verified."
-    } else {
-        Write-Host "SCP failed. Falling back to SSH-only remote file creation." -ForegroundColor Yellow
-    }
-    Remove-Item $TempFile -ErrorAction SilentlyContinue
-
-    # Step 4.4: Deployment
+    # Step 4.2: Deploy startup script
     Write-Host "Creating remote directory..."
-    ssh -o StrictHostKeyChecking=no -i $SSH_KEY -p $SSH_PORT $REMOTE_HOST "mkdir -p ~/vlm-inference-lab/scripts/runpod"
-    
+    ssh @DEPLOY_SSH_OPTS $DEPLOY_TARGET "mkdir -p ~/vlm-inference-lab/scripts/runpod"
+
     Write-Host "Deploying startup script..."
-    if ($SCP_OK) {
-        scp -o StrictHostKeyChecking=no -i $SSH_KEY -P $SSH_PORT scripts/runpod/start_vllm.sh "${REMOTE_HOST}:~/vlm-inference-lab/scripts/runpod/"
+    $Script_Content = Get-Content "scripts/runpod/start_vllm.sh" -Raw
+    if ($USE_SCP) {
+        scp @DEPLOY_SSH_OPTS scripts/runpod/start_vllm.sh "${DEPLOY_TARGET}:~/vlm-inference-lab/scripts/runpod/start_vllm.sh"
     } else {
-        # Fallback: Create script via SSH heredoc
-        $Script_Content = Get-Content "scripts/runpod/start_vllm.sh" -Raw
+        # SSH fallback: Use Base64 to avoid escaping issues
         $Encoded_Script = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($Script_Content))
-        ssh -o StrictHostKeyChecking=no -i $SSH_KEY -p $SSH_PORT $REMOTE_HOST "echo '$Encoded_Script' | base64 -d > ~/vlm-inference-lab/scripts/runpod/start_vllm.sh && chmod +x ~/vlm-inference-lab/scripts/runpod/start_vllm.sh"
+        ssh @DEPLOY_SSH_OPTS $DEPLOY_TARGET "echo '$Encoded_Script' | base64 -d > ~/vlm-inference-lab/scripts/runpod/start_vllm.sh && chmod +x ~/vlm-inference-lab/scripts/runpod/start_vllm.sh"
     }
     if ($LASTEXITCODE -ne 0) { Write-Error "Failed to deploy startup script"; exit 1 }
 
     Write-Host "Starting vLLM remotely..."
-    $SHORT_MODEL = $env:MODEL_ID.Split('/')[-1]
-    $ALLOW_KILL = if ($ALLOW_MUTATION) { "true" } else { "false" }
-    $START_CMD = "bash ~/vlm-inference-lab/scripts/runpod/start_vllm.sh '$($env:MODEL_ID)' '$($env:HF_TOKEN)' $($env:VLLM_PORT) '$SHORT_MODEL' $ALLOW_KILL"
-    ssh -o StrictHostKeyChecking=no -i $SSH_KEY -p $SSH_PORT $REMOTE_HOST $START_CMD
+    $ALLOW_KILL = if ($env:RUNPOD_ALLOW_KILL_EXISTING_VLLM -eq "true") { "true" } else { "false" }
+    $START_CMD = "bash ~/vlm-inference-lab/scripts/runpod/start_vllm.sh '$($env:MODEL_ID)' '$($env:HF_TOKEN)' $($env:VLLM_PORT) '' $ALLOW_KILL"
+    ssh @DEPLOY_SSH_OPTS $DEPLOY_TARGET $START_CMD
     if ($LASTEXITCODE -ne 0) { Write-Error "Remote startup script failed"; exit 1 }
 }
 
@@ -258,12 +253,22 @@ if (-not $HEALTHY) {
 
 # 6. Remote Benchmark
 Write-Host "--- Stage: Remote Benchmark ---"
-Write-Host "Starting benchmark using $env:RUNPOD_BASE_URL (Model: $RESOLVED_MODEL_ID)..."
-.\scripts\benchmark_remote.ps1 $env:RUNPOD_BASE_URL $RESOLVED_MODEL_ID 10 2 --fail-on-errors
+$TIER = if ($env:BENCHMARK_TIER) { $env:BENCHMARK_TIER } else { "smoke" }
+    if ($env:BENCHMARK_PATH -eq "vllm") {
+        Write-Host "Starting professional benchmark (vllm bench) using $env:RUNPOD_BASE_URL (Model: $RESOLVED_MODEL_ID)..."
+        .\scripts\benchmark_vllm_bench.ps1 $env:RUNPOD_BASE_URL $RESOLVED_MODEL_ID $TIER
+    } elseif ($env:BENCHMARK_PATH -eq "sweep") {
+        Write-Host "Starting professional sweep (vllm bench sweep) using $env:RUNPOD_BASE_URL (Model: $RESOLVED_MODEL_ID)..."
+        .\scripts\benchmark_vllm_sweep.ps1 $env:RUNPOD_BASE_URL $RESOLVED_MODEL_ID $TIER
+    } else {
+        Write-Host "Starting benchmark ($TIER) using $env:RUNPOD_BASE_URL (Model: $RESOLVED_MODEL_ID)..."
+        .\scripts\benchmark_remote.ps1 $env:RUNPOD_BASE_URL $RESOLVED_MODEL_ID --tier $TIER --fail-on-errors
+    }
 if ($LASTEXITCODE -ne 0) { Write-Error "Benchmark failed"; exit 1 }
 
 Write-Host "--------------------------------------------------------"
 Write-Host "Orchestration Successful!"
 Write-Host "--------------------------------------------------------"
+Write-Host "Tier        : $(if ($env:BENCHMARK_TIER) { $env:BENCHMARK_TIER } else { 'smoke' })"
 Write-Host "IMPORTANT: Don't forget to TERMINATE your Runpod pod"
 Write-Host "--------------------------------------------------------"

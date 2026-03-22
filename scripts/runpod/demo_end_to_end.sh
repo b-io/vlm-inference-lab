@@ -39,10 +39,6 @@ validate_base_url() {
             exit 1
         fi
     fi
-
-    if [[ "$url" != *".proxy.runpod.net"* ]] && [[ "$url" != *"localhost"* ]] && [[ "$url" != *"127.0.0.1"* ]]; then
-        echo "Warning: RUNPOD_BASE_URL ($url) does not appear to be a standard Runpod proxy URL (*.proxy.runpod.net)."
-    fi
 }
 
 show_ssh_troubleshooting() {
@@ -53,14 +49,12 @@ show_ssh_troubleshooting() {
     echo "$message"
     echo ""
     echo "Troubleshooting Runpod SSH (Strategy: $strategy):"
-    echo "1. 'generic' mode requires DIRECT TCP SSH access for SCP/SFTP support."
-    echo "2. The Runpod 'ssh.runpod.io' shortcut (Proxied SSH) IS NOT SUFFICIENT for SCP/SFTP."
-    echo "3. If direct TCP SSH failed, you may need to bootstrap 'sshd' via Proxied SSH."
-    echo "4. Use 'RUNPOD_PROXY_SSH_TARGET' in .env.runpod (e.g., j0axhra8c4u1mi-64411b50@ssh.runpod.io)."
-    echo "5. Ensure direct TCP host/port are correct from the Connect tab ('SSH over exposed TCP')."
-    echo "6. Ensure your SSH key ($ssh_key) is correctly configured."
+    echo "1. 'generic' mode requires shell access for deployment."
+    echo "2. Proxied SSH (ssh.runpod.io) is supported even if direct TCP SSH is blocked."
+    echo "3. Ensure 'RUNPOD_PROXY_SSH_TARGET' is set in .env.runpod (e.g. user@ssh.runpod.io)."
+    echo "4. If direct TCP failed, ensure your SSH key ($ssh_key) is correctly configured."
+    echo "5. If you already have a pod running vLLM, use 'RUNPOD_MODE=existing' instead."
     echo ""
-    echo "If you already have a pod running vLLM, use 'RUNPOD_MODE=existing' instead."
 }
 
 is_managed_instance() {
@@ -74,8 +68,8 @@ is_managed_instance() {
         return 0
     fi
 
-    # Check 2: Remote Process Check
-    if [ -n "$remote_host" ]; then
+    # Check 2: Remote Process Check (if direct SSH works)
+    if [ -n "$remote_host" ] && [ -f "$ssh_key" ]; then
         if ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no -i "$ssh_key" -p "$ssh_port" "$remote_host" "pgrep -f 'vllm serve'" >/dev/null 2>&1; then
             return 0
         fi
@@ -167,15 +161,32 @@ invoke_existing_mode() {
         exit 1
     fi
 
-    echo "Starting benchmark using ${RUNPOD_BASE_URL} (Model: ${RESOLVED_MODEL_ID})..."
-    if ! ./scripts/benchmark_remote.sh "${RUNPOD_BASE_URL}" "${RESOLVED_MODEL_ID}" 10 2 --fail-on-errors; then
-        echo "Error: Benchmark failed"
-        exit 1
+    local tier=${BENCHMARK_TIER:-smoke}
+    local benchmark_path=${BENCHMARK_PATH:-default}
+
+    if [ "$benchmark_path" = "vllm" ]; then
+        echo "Starting professional benchmark (vllm bench) using ${RUNPOD_BASE_URL} (Model: ${RESOLVED_MODEL_ID})..."
+        if ! ./scripts/benchmark_vllm_bench.sh "${RUNPOD_BASE_URL}" "${RESOLVED_MODEL_ID}" "$tier"; then
+            echo "Error: Benchmark failed"
+            exit 1
+        fi
+    elif [ "$benchmark_path" = "sweep" ]; then
+        echo "Starting professional sweep (vllm bench sweep) using ${RUNPOD_BASE_URL} (Model: ${RESOLVED_MODEL_ID})..."
+        if ! ./scripts/benchmark_vllm_sweep.sh "${RUNPOD_BASE_URL}" "${RESOLVED_MODEL_ID}" "$tier"; then
+            echo "Error: Sweep failed"
+            exit 1
+        fi
+    else
+        echo "Starting benchmark ($tier) using ${RUNPOD_BASE_URL} (Model: ${RESOLVED_MODEL_ID})..."
+        if ! ./scripts/benchmark_remote.sh "${RUNPOD_BASE_URL}" "${RESOLVED_MODEL_ID}" --tier "$tier" --fail-on-errors; then
+            echo "Error: Benchmark failed"
+            exit 1
+        fi
     fi
 }
 
 invoke_generic_mode() {
-    local ssh_host=${RUNPOD_SSH_HOST:?Required RUNPOD_SSH_HOST in .env.runpod for generic mode}
+    local ssh_host=${RUNPOD_SSH_HOST:-""}
     local ssh_user=${RUNPOD_SSH_USER:-root}
     local ssh_port=${RUNPOD_SSH_PORT:-22}
     local ssh_key=${RUNPOD_SSH_KEY_PATH:-~/.ssh/id_ed25519}
@@ -184,8 +195,12 @@ invoke_generic_mode() {
 
     local remote_host="${ssh_user}@${ssh_host}"
 
+    if [ -z "$ssh_host" ] && [ "$RUNPOD_SSH_MODE" != "proxied" ]; then
+        echo "Error: Required RUNPOD_SSH_HOST in .env.runpod for generic mode (unless RUNPOD_SSH_MODE=proxied)"
+        exit 1
+    fi
+
     echo "Mode: Generic Remote (SSH)"
-    echo "Remote Host : ${remote_host} (Port: ${ssh_port})"
     echo "Base URL    : ${RUNPOD_BASE_URL}"
     echo "Model ID    : ${MODEL_ID}"
     echo "SSH Strategy: ${RUNPOD_SSH_MODE}"
@@ -194,115 +209,134 @@ invoke_generic_mode() {
     # 1. Detection
     echo "--- Stage: Environment Detection ---"
     if is_managed_instance "${RUNPOD_BASE_URL}" "${remote_host}" "${ssh_key}" "${ssh_port}"; then
-        echo "Detected: This host appears to be an already-managed vLLM service pod."
+        echo "Detected: This target appears to already be serving vLLM."
         if [ "${RUNPOD_ALLOW_MANAGED_INSTANCE_MUTATION}" != "true" ]; then
-            echo "Error: Generic remote deployment is disabled by default on managed pods to avoid killing the main service process."
-            echo "Suggestion: Use 'RUNPOD_MODE=existing', or set 'RUNPOD_ALLOW_MANAGED_INSTANCE_MUTATION=true' only if you are sure."
+            echo "-----------------------------------------------------------------------"
+            echo "Error: Generic mutation is blocked by default on managed pods to avoid"
+            echo "killing the container’s main service process."
+            echo ""
+            echo "Recommendation: Use 'RUNPOD_MODE=existing' for benchmark-only operation,"
+            echo "or set 'RUNPOD_ALLOW_MANAGED_INSTANCE_MUTATION=true' only if you are sure."
+            echo "-----------------------------------------------------------------------"
             exit 1
         fi
     else
         echo "Detected: Generic host (not a managed vLLM service)."
     fi
 
-    # 2. SSH Preflight & Bootstrap
-    echo "--- Stage: SSH Preflight & Bootstrap ---"
-    local direct_ssh_ok=false
+    # 2. SSH Transport Decision
+    echo "--- Stage: SSH Deployment ---"
+    local deploy_target=""
+    local deploy_opts=("-o" "BatchMode=yes" "-o" "ConnectTimeout=10" "-o" "StrictHostKeyChecking=no")
     local scp_ok=false
+    local direct_ssh="unavailable"
+    local proxied_ssh="unavailable"
+    local scp_support="unavailable"
+    local fallback_mode="none"
 
-    # Try Direct SSH
-    echo "Direct SSH Preflight Check: Connecting to ${remote_host}:${ssh_port}..."
-    if ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "${ssh_key}" -p "${ssh_port}" "${remote_host}" "echo SSH_OK" > /dev/null 2>&1; then
-        direct_ssh_ok=true
-        echo "Direct SSH connection verified."
-    fi
-
-    # Try Bootstrap if allowed
-    if [ "$direct_ssh_ok" = false ] && [[ "${RUNPOD_SSH_MODE}" == "auto" || "${RUNPOD_SSH_MODE}" == "proxied" ]]; then
+    if [ "${RUNPOD_SSH_MODE}" = "proxied" ]; then
         if [ -z "${RUNPOD_PROXY_SSH_TARGET}" ]; then
-            echo "Direct SSH failed and RUNPOD_PROXY_SSH_TARGET is not configured. Cannot bootstrap."
-        else
-            echo "Attempting SSH Bootstrap via Proxied SSH (${RUNPOD_PROXY_SSH_TARGET})..."
-            local pub_key=""
-            if [ -f "${ssh_key}.pub" ]; then pub_key=$(cat "${ssh_key}.pub"); fi
+            echo "Error: RUNPOD_PROXY_SSH_TARGET is required for proxied mode."
+            exit 1
+        fi
+        deploy_target="${RUNPOD_PROXY_SSH_TARGET}"
+        proxied_ssh="available"
+        echo "Using Proxied SSH transport: ${deploy_target}"
+    else
+        # Try Direct first
+        echo "Attempting Direct SSH Preflight (${remote_host})..."
+        if ssh "${deploy_opts[@]}" -i "${ssh_key}" -p "${ssh_port}" "${remote_host}" "echo SSH_OK" > /dev/null 2>&1; then
+            deploy_target="${remote_host}"
+            deploy_opts+=("-i" "${ssh_key}" "-p" "${ssh_port}")
+            direct_ssh="available"
+            echo "Direct SSH verified."
             
-            local bootstrap_script
-            bootstrap_script=$(cat scripts/runpod/enable_sshd.sh)
-            # Use base64 to safely transfer the script over SSH
-            local encoded_script
-            encoded_script=$(echo "$bootstrap_script" | base64 | tr -d '\n')
-            
-            if ssh -o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=no "${RUNPOD_PROXY_SSH_TARGET}" "echo '$encoded_script' | base64 -d > /tmp/bootstrap.sh && bash /tmp/bootstrap.sh '$pub_key'" > /dev/null 2>&1; then
-                echo "Bootstrap successful. Retrying direct SSH..."
-                if ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "${ssh_key}" -p "${ssh_port}" "${remote_host}" "echo SSH_OK" > /dev/null 2>&1; then
-                    direct_ssh_ok=true
-                    echo "Direct SSH now verified."
-                fi
+            # Try SCP preflight
+            local temp_file
+            temp_file=$(mktemp)
+            echo "SCP_TEST" > "${temp_file}"
+            if scp "${deploy_opts[@]}" -P "${ssh_port}" "${temp_file}" "${remote_host}:/tmp/scp_test.tmp" > /dev/null 2>&1; then
+                scp_ok=true
+                scp_support="available"
+                ssh "${deploy_opts[@]}" "${remote_host}" "rm /tmp/scp_test.tmp"
+                echo "SCP transfer verified."
             else
-                echo "Bootstrap via proxied SSH failed."
+                fallback_mode="SSH-only file creation"
+                echo "SCP failed. Will use SSH-only fallback."
+            fi
+            rm -f "${temp_file}"
+        elif [[ "${RUNPOD_SSH_MODE}" == "auto" && -n "${RUNPOD_PROXY_SSH_TARGET}" ]]; then
+            echo "Direct SSH failed. Attempting Proxied SSH fallback (${RUNPOD_PROXY_SSH_TARGET})..."
+            if ssh "${deploy_opts[@]}" "${RUNPOD_PROXY_SSH_TARGET}" "echo SSH_OK" > /dev/null 2>&1; then
+                deploy_target="${RUNPOD_PROXY_SSH_TARGET}"
+                proxied_ssh="available"
+                fallback_mode="SSH-only file creation"
+                echo "Proxied SSH verified."
             fi
         fi
     fi
 
-    if [ "$direct_ssh_ok" = false ]; then
-        show_ssh_troubleshooting "Error: SSH connectivity failed to ${remote_host}:${ssh_port}" "${ssh_key}" "${RUNPOD_SSH_MODE}"
+    echo ""
+    echo "Connection Summary:"
+    echo "  Direct SSH: ${direct_ssh}"
+    echo "  Proxied SSH: ${proxied_ssh}"
+    echo "  SCP Support: ${scp_support}"
+    echo "  Fallback mode (SSH-only): $([ "$fallback_mode" != "none" ] && echo "yes" || echo "no")"
+    echo ""
+
+    if [ -z "$deploy_target" ]; then
+        show_ssh_troubleshooting "Error: SSH connectivity failed." "${ssh_key}" "${RUNPOD_SSH_MODE}"
         exit 1
     fi
 
-    # 3. SCP Preflight
-    echo "SCP Preflight Check..."
-    local temp_file
-    temp_file=$(mktemp)
-    echo "SCP_TEST" > "${temp_file}"
-    local remote_temp="~/scp_test_$RANDOM.tmp"
-    
-    if scp -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "${ssh_key}" -P "${ssh_port}" "${temp_file}" "${remote_host}:${remote_temp}" > /dev/null 2>&1; then
-        scp_ok=true
-        ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i "${ssh_key}" -p "${ssh_port}" "${remote_host}" "rm -f ${remote_temp}" > /dev/null 2>&1
-        echo "SCP transfer verified."
-    else
-        echo "SCP failed. Falling back to SSH-only remote file creation."
-    fi
-    rm -f "${temp_file}"
-
-    # 4. Deployment
+    # 3. Deployment
     echo "Creating remote directory..."
-    ssh -o StrictHostKeyChecking=no -i "${ssh_key}" -p "${ssh_port}" "${remote_host}" "mkdir -p ~/vlm-inference-lab/scripts/runpod"
+    ssh "${deploy_opts[@]}" "${deploy_target}" "mkdir -p ~/vlm-inference-lab/scripts/runpod"
 
     echo "Deploying startup script..."
     if [ "$scp_ok" = true ]; then
-        if ! scp -o StrictHostKeyChecking=no -i "${ssh_key}" -P "${ssh_port}" scripts/runpod/start_vllm.sh "${remote_host}:~/vlm-inference-lab/scripts/runpod/"; then
-            echo "Error: Failed to SCP startup script to ${remote_host}"
-            exit 1
-        fi
+        scp "${deploy_opts[@]}" -P "${ssh_port}" scripts/runpod/start_vllm.sh "${deploy_target}:~/vlm-inference-lab/scripts/runpod/start_vllm.sh"
     else
-        # Fallback: Create script via SSH heredoc
+        # Fallback: Create script via SSH heredoc using base64 for safety
         local script_content
         script_content=$(cat scripts/runpod/start_vllm.sh)
         local encoded_script
         encoded_script=$(echo "$script_content" | base64 | tr -d '\n')
-        if ! ssh -o StrictHostKeyChecking=no -i "${ssh_key}" -p "${ssh_port}" "${remote_host}" "echo '$encoded_script' | base64 -d > ~/vlm-inference-lab/scripts/runpod/start_vllm.sh && chmod +x ~/vlm-inference-lab/scripts/runpod/start_vllm.sh"; then
-             echo "Error: Failed to deploy startup script via SSH fallback"
-             exit 1
-        fi
+        ssh "${deploy_opts[@]}" "${deploy_target}" "echo '$encoded_script' | base64 -d > ~/vlm-inference-lab/scripts/runpod/start_vllm.sh && chmod +x ~/vlm-inference-lab/scripts/runpod/start_vllm.sh"
     fi
 
-    # 5. Start vLLM
+    # 4. Start vLLM
     echo "Starting vLLM on remote host..."
-    local short_model="${MODEL_ID##*/}"
-    local allow_kill="${RUNPOD_ALLOW_MANAGED_INSTANCE_MUTATION}"
-    ssh -o StrictHostKeyChecking=no -i "${ssh_key}" -p "${ssh_port}" "${remote_host}" "bash ~/vlm-inference-lab/scripts/runpod/start_vllm.sh '${MODEL_ID}' '${hf_token}' '${vllm_port}' '${short_model}' '${allow_kill}'"
+    local allow_kill=${RUNPOD_ALLOW_KILL_EXISTING_VLLM:-false}
+    ssh "${deploy_opts[@]}" "${deploy_target}" "bash ~/vlm-inference-lab/scripts/runpod/start_vllm.sh '${MODEL_ID}' '${hf_token}' '${vllm_port}' '' '${allow_kill}'"
 
-    # 6. Wait for readiness
+    # 5. Wait for readiness
     if ! wait_for_vllm_ready "${RUNPOD_BASE_URL}" "${MODEL_ID}"; then
         echo "Error: vLLM did not become healthy at ${RUNPOD_BASE_URL}"
         exit 1
     fi
 
-    # 7. Benchmark
-    echo "Starting benchmark using ${RUNPOD_BASE_URL} (Model: ${RESOLVED_MODEL_ID})..."
-    if ! ./scripts/benchmark_remote.sh "${RUNPOD_BASE_URL}" "${RESOLVED_MODEL_ID}" 10 2 --fail-on-errors; then
-        echo "Error: Benchmark failed"
-        exit 1
+    local tier=${BENCHMARK_TIER:-smoke}
+    local benchmark_path=${BENCHMARK_PATH:-default}
+
+    if [ "$benchmark_path" = "vllm" ]; then
+        echo "Starting professional benchmark (vllm bench) using ${RUNPOD_BASE_URL} (Model: ${RESOLVED_MODEL_ID})..."
+        if ! ./scripts/benchmark_vllm_bench.sh "${RUNPOD_BASE_URL}" "${RESOLVED_MODEL_ID}" "$tier"; then
+            echo "Error: Benchmark failed"
+            exit 1
+        fi
+    elif [ "$benchmark_path" = "sweep" ]; then
+        echo "Starting professional sweep (vllm bench sweep) using ${RUNPOD_BASE_URL} (Model: ${RESOLVED_MODEL_ID})..."
+        if ! ./scripts/benchmark_vllm_sweep.sh "${RUNPOD_BASE_URL}" "${RESOLVED_MODEL_ID}" "$tier"; then
+            echo "Error: Sweep failed"
+            exit 1
+        fi
+    else
+        echo "Starting benchmark ($tier) using ${RUNPOD_BASE_URL} (Model: ${RESOLVED_MODEL_ID})..."
+        if ! ./scripts/benchmark_remote.sh "${RUNPOD_BASE_URL}" "${RESOLVED_MODEL_ID}" --tier "$tier" --fail-on-errors; then
+            echo "Error: Benchmark failed"
+            exit 1
+        fi
     fi
 }
 
@@ -323,6 +357,7 @@ fi
 echo "--------------------------------------------------------"
 echo "Demo Successful!"
 echo "--------------------------------------------------------"
+echo "Tier        : ${BENCHMARK_TIER:-smoke}"
 echo "IMPORTANT: Don't forget to TERMINATE your Runpod pod"
 echo "to avoid ongoing charges for compute and storage."
 echo "--------------------------------------------------------"

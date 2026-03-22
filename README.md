@@ -71,7 +71,10 @@ Illustrates the 'Dual Encoder' (CLIP-style) architecture using mock embeddings t
 Supports two modes for remote VLM serving:
 - **existing**: Benchmarks a pod already running vLLM via the Runpod proxy URL. No SSH required.
 - **generic**: Deploys vLLM from your local machine to a remote GPU host, then benchmarks it.
-- **Features**: Automatic model ID resolution, SSH bootstrapping via proxied SSH, direct TCP SSH/SCP support with fallback to SSH-only file creation, and managed-instance safety guards.
+- **Benchmark Tiers**: Supports `smoke` (10 requests), `latency` (100 requests), `throughput` (200 requests), and `sweep` (parameter grid search).
+- **Professional Path**: This path uses vLLM's native benchmark CLI. It captures high-fidelity metrics (TTFT, ITL) and supports parameter sweeps with **Pareto Frontier analysis**. *Note: Requires `vllm` installed locally to run against the remote endpoint.*
+- **Diagnostics**: A lightweight helper script (`scripts/runpod/vllm_diagnostics.ps1` / `.sh`) for checking connectivity, SSH, and model status.
+- **Features**: Automatic model ID resolution, **Proxied SSH support** (`ssh.runpod.io`), **SSH-only file creation fallback** (no SCP required), and **managed-instance safety guards**.
 - **Read more**: [Runpod Demo Guide](docs/inference/runpod_demo.md)
 
 ## How to Run

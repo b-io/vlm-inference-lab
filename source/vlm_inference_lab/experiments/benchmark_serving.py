@@ -4,6 +4,7 @@ import json
 import argparse
 import asyncio
 import statistics
+import requests
 from datetime import datetime, timezone
 import zoneinfo
 from vlm_inference_lab import get_timezone
@@ -74,6 +75,18 @@ def summarize_results(results, total_time, num_requests, concurrency):
     }
     return summary
 
+def get_metrics(base_url: str) -> str:
+    """Fetches raw metrics from the server's /metrics endpoint."""
+    try:
+        # metrics endpoint is usually at the root, not /v1
+        metrics_url = base_url.replace("/v1", "").rstrip("/") + "/metrics"
+        response = requests.get(metrics_url, timeout=10)
+        if response.status_code == 200:
+            return response.text
+    except Exception as e:
+        print(f"Warning: Could not fetch metrics from {base_url}: {e}")
+    return ""
+
 def main():
     """Parses command-line arguments and orchestrates the serving benchmark."""
     parser = argparse.ArgumentParser(description="VLM Serving Benchmark")
@@ -87,8 +100,24 @@ def main():
     parser.add_argument("--output-dir", default="results")
     parser.add_argument("--config", help="Path to experiment config YAML")
     parser.add_argument("--fail-on-errors", action="store_true", help="Exit with non-zero code if any request fails")
+    parser.add_argument("--tier", choices=["smoke", "latency", "throughput"], help="Benchmark tier to use (provides default requests/concurrency)")
 
     args = parser.parse_args()
+    
+    # Apply tier defaults if tier is specified
+    if args.tier:
+        if args.tier == "smoke":
+            # Smoke: 10 requests, 1 concurrency
+            if args.num_requests == 10: args.num_requests = 10
+            if args.concurrency == 2: args.concurrency = 1
+        elif args.tier == "latency":
+            # Latency: 100 requests, 1 concurrency
+            if args.num_requests == 10: args.num_requests = 100
+            if args.concurrency == 2: args.concurrency = 1
+        elif args.tier == "throughput":
+            # Throughput: 200 requests, 8 concurrency
+            if args.num_requests == 10: args.num_requests = 200
+            if args.concurrency == 2: args.concurrency = 8
     
     # Check if an experiment config YAML is provided
     if args.config:
@@ -116,16 +145,28 @@ def main():
         exit(1)
 
     # Run the concurrent benchmark using asyncio
+    print(f"Capturing pre-benchmark metrics...")
+    metrics_pre = get_metrics(args.url)
+
     results, total_time = asyncio.run(
         benchmark_concurrency(
             adapter, args.num_requests, args.concurrency, args.prompt, args.max_tokens
         )
     )
 
+    print(f"Capturing post-benchmark metrics...")
+    metrics_post = get_metrics(args.url)
+
     # Summarize individual request results
     summary = summarize_results(results, total_time, args.num_requests, args.concurrency)
     summary["backend"] = args.backend
     summary["model"] = adapter.model_name()
+    summary["tier"] = args.tier if args.tier else "custom"
+    summary["base_url"] = args.url
+    summary["prompt_char_count"] = len(args.prompt)
+    
+    # Add prompt length to summary for metadata
+    summary["prompt_length"] = len(args.prompt)
     
     print("\nResults:")
     for k, v in summary.items():
@@ -139,13 +180,30 @@ def main():
     
     # Use the configured timezone for local timestamp
     tz = zoneinfo.ZoneInfo(get_timezone())
-    timestamp = datetime.now(tz).strftime("%Y%m%d_%H%M%S")
-    filename = f"benchmark_{args.backend}_{timestamp}.json"
+    now = datetime.now(tz)
+    timestamp = now.strftime("%Y%m%d_%H%M%S")
+    tier_str = args.tier if args.tier else "custom"
+    filename = f"benchmark_{args.backend}_{tier_str}_{timestamp}.json"
     filepath = os.path.join(args.output_dir, filename)
     
     # Combine summary and raw results into a single output object
     full_output = {
         "summary": summary,
+        "metadata": {
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "timestamp_local": now.isoformat(),
+            "timezone": get_timezone(),
+            "tier": args.tier,
+            "base_url": args.url,
+            "prompt_length": len(args.prompt),
+            "backend": args.backend,
+            "model": adapter.model_name(),
+            "max_tokens": args.max_tokens
+        },
+        "metrics": {
+            "pre": metrics_pre,
+            "post": metrics_post
+        },
         "raw_results": [asdict(r) for r in results]
     }
     

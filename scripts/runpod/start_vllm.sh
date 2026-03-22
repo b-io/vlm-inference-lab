@@ -15,14 +15,40 @@ ALLOW_KILL=${5:-false}
 # 1. Managed-instance safety guard
 if [ "$ALLOW_KILL" != "true" ]; then
     if pgrep -f "vllm serve" >/dev/null 2>&1; then
+        echo "-----------------------------------------------------------------------"
         echo "Error: 'vllm serve' is already running and ALLOW_KILL is false."
-        echo "This host may already be a managed service pod."
-        echo "Recommendation: Use 'RUNPOD_MODE=existing' to benchmark the running service."
+        echo "This target appears to already be serving vLLM."
+        echo "To avoid killing the container’s main service, generic mutation is blocked by default."
+        echo "Recommendation: Use 'RUNPOD_MODE=existing' for benchmark-only operation,"
+        echo "or explicitly allow mutation only on a generic SSH-managed host by setting"
+        echo "RUNPOD_ALLOW_KILL_EXISTING_VLLM=true in your .env.runpod file."
+        echo "-----------------------------------------------------------------------"
         exit 1
     fi
 fi
 
-# 2. Prepare startup flags
+# 2. Cleanup (only if allowed or safe)
+echo "Checking for existing vLLM processes..."
+CURRENT_PID=$$
+# We look for the exact 'vllm serve' executable pattern, but exclude the current process PID
+PIDS_TO_KILL=$(pgrep -f "vllm serve" | grep -v "^${CURRENT_PID}$" || true)
+
+if [ -n "$PIDS_TO_KILL" ]; then
+    if [ "$ALLOW_KILL" = "true" ]; then
+        echo "Killing existing vLLM PIDs: $PIDS_TO_KILL"
+        echo "$PIDS_TO_KILL" | xargs kill -9 || true
+    else
+        echo "Warning: Existing vLLM processes found ($PIDS_TO_KILL) but ALLOW_KILL is false. Skipping kill."
+    fi
+fi
+
+if [ "$ALLOW_KILL" = "true" ]; then
+    docker stop vllm-server &> /dev/null || true
+    docker rm vllm-server &> /dev/null || true
+fi
+sleep 2
+
+# 3. Prepare startup flags
 VLLM_FLAGS=(
     "${MODEL_ID}"
     --host 0.0.0.0
@@ -39,22 +65,7 @@ if [ -n "${HF_TOKEN}" ]; then
     export HF_TOKEN="${HF_TOKEN}"
 fi
 
-# 3. Check for local 'vllm' installation
-# First, kill any existing vLLM processes to allow redeployment
-echo "Checking for existing vLLM processes..."
-# Use a more specific pgrep/pkill to avoid killing the current SSH session/process
-# We look for the exact 'vllm serve' executable pattern, but exclude the current process PID
-CURRENT_PID=$$
-# Some systems might not have xargs -r, so we use a subshell
-PIDS_TO_KILL=$(pgrep -f "vllm serve" | grep -v "^${CURRENT_PID}$" || true)
-if [ -n "$PIDS_TO_KILL" ]; then
-    echo "Killing existing vLLM PIDs: $PIDS_TO_KILL"
-    echo "$PIDS_TO_KILL" | xargs kill -9 || true
-fi
-docker stop vllm-server &> /dev/null || true
-docker rm vllm-server &> /dev/null || true
-sleep 2
-
+# 4. Check for local 'vllm' installation
 if command -v vllm &> /dev/null; then
     VLLM_PATH=$(command -v vllm)
     echo "Found local 'vllm' at ${VLLM_PATH}. Starting vLLM directly..."
@@ -68,16 +79,18 @@ if command -v vllm &> /dev/null; then
     echo "Logs are being written to vllm_server.log"
 
 else
-    # 4. Fallback to Docker
+    # 5. Fallback to Docker
     echo "Local 'vllm' not found. Checking for Docker..."
     if ! command -v docker &> /dev/null; then
         echo "Error: Neither 'vllm' nor 'docker' was found on the remote host."
         exit 1
     fi
 
-    echo "Cleaning up any existing vllm-server container..."
-    docker stop vllm-server &> /dev/null || true
-    docker rm vllm-server &> /dev/null || true
+    if [ "$ALLOW_KILL" = "true" ]; then
+        echo "Cleaning up any existing vllm-server container..."
+        docker stop vllm-server &> /dev/null || true
+        docker rm vllm-server &> /dev/null || true
+    fi
 
     echo "Starting vLLM via Docker (vllm/vllm-openai:latest)..."
     echo "Model: ${MODEL_ID}, Port: ${VLLM_PORT}, Alias: ${SERVED_MODEL_NAME:-none}"
@@ -103,7 +116,7 @@ else
         serve "${DOCKER_VLLM_FLAGS[@]}"
 fi
 
-# 5. Health check loop
+# 6. Health check loop
 # We check on localhost:VLLM_PORT if direct, or localhost:VLLM_PORT (mapped) if Docker.
 # Note: In both cases, the external-facing port is VLLM_PORT.
 echo "Waiting for vLLM server to start at http://localhost:${VLLM_PORT}/v1/models (this may take time)..."
