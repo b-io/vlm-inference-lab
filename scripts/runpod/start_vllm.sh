@@ -4,37 +4,71 @@ set -euo pipefail
 # Runpod Remote vLLM Startup Script
 # Purpose: Start a vLLM server directly or via Docker on a generic GPU VM/pod.
 # This script is intended for 'generic-remote mode' only.
-# Usage: ./runpod_start_vllm.sh <model_id> <hf_token> [port]
+# Usage: ./start_vllm.sh <model_id> <hf_token> [port] [served_model_name] [allow_kill]
 
 MODEL_ID=${1:?Model ID is required}
 HF_TOKEN=${2:-""}
 VLLM_PORT=${3:-8000}
+SERVED_MODEL_NAME=${4:-""}
+ALLOW_KILL=${5:-false}
 
-# 1. Export HF_TOKEN if provided
+# 1. Managed-instance safety guard
+if [ "$ALLOW_KILL" != "true" ]; then
+    if pgrep -f "vllm serve" >/dev/null 2>&1; then
+        echo "Error: 'vllm serve' is already running and ALLOW_KILL is false."
+        echo "This host may already be a managed service pod."
+        echo "Recommendation: Use 'RUNPOD_MODE=existing' to benchmark the running service."
+        exit 1
+    fi
+fi
+
+# 2. Prepare startup flags
+VLLM_FLAGS=(
+    "${MODEL_ID}"
+    --host 0.0.0.0
+    --port "${VLLM_PORT}"
+    --trust-remote-code
+)
+
+if [ -n "${SERVED_MODEL_NAME}" ]; then
+    VLLM_FLAGS+=(--served-model-name "${SERVED_MODEL_NAME}")
+fi
+
+# 2. Export HF_TOKEN if provided
 if [ -n "${HF_TOKEN}" ]; then
     export HF_TOKEN="${HF_TOKEN}"
 fi
 
-# 2. Check for local 'vllm' installation
+# 3. Check for local 'vllm' installation
 # First, kill any existing vLLM processes to allow redeployment
 echo "Checking for existing vLLM processes..."
-pkill -f "vllm serve" || true
+# Use a more specific pgrep/pkill to avoid killing the current SSH session/process
+# We look for the exact 'vllm serve' executable pattern, but exclude the current process PID
+CURRENT_PID=$$
+# Some systems might not have xargs -r, so we use a subshell
+PIDS_TO_KILL=$(pgrep -f "vllm serve" | grep -v "^${CURRENT_PID}$" || true)
+if [ -n "$PIDS_TO_KILL" ]; then
+    echo "Killing existing vLLM PIDs: $PIDS_TO_KILL"
+    echo "$PIDS_TO_KILL" | xargs kill -9 || true
+fi
 docker stop vllm-server &> /dev/null || true
 docker rm vllm-server &> /dev/null || true
 sleep 2
 
 if command -v vllm &> /dev/null; then
-    echo "Found local 'vllm' installation. Starting vLLM directly..."
+    VLLM_PATH=$(command -v vllm)
+    echo "Found local 'vllm' at ${VLLM_PATH}. Starting vLLM directly..."
+    echo "Command: vllm serve ${VLLM_FLAGS[*]}"
     
     # Start vLLM in the background
-    nohup vllm serve "${MODEL_ID}" --host 0.0.0.0 --port "${VLLM_PORT}" --trust-remote-code > vllm_server.log 2>&1 &
+    nohup vllm serve "${VLLM_FLAGS[@]}" > vllm_server.log 2>&1 &
     
     VLLM_PID=$!
     echo "vLLM started with PID: ${VLLM_PID}"
     echo "Logs are being written to vllm_server.log"
 
 else
-    # 3. Fallback to Docker
+    # 4. Fallback to Docker
     echo "Local 'vllm' not found. Checking for Docker..."
     if ! command -v docker &> /dev/null; then
         echo "Error: Neither 'vllm' nor 'docker' was found on the remote host."
@@ -46,8 +80,18 @@ else
     docker rm vllm-server &> /dev/null || true
 
     echo "Starting vLLM via Docker (vllm/vllm-openai:latest)..."
+    echo "Model: ${MODEL_ID}, Port: ${VLLM_PORT}, Alias: ${SERVED_MODEL_NAME:-none}"
     mkdir -p ~/.cache/huggingface
     
+    # Docker internal port is always 8000 in this command, mapped to host VLLM_PORT
+    DOCKER_VLLM_FLAGS=("${VLLM_FLAGS[@]}")
+    # Replace the host port with 8000 for the internal container process
+    for i in "${!DOCKER_VLLM_FLAGS[@]}"; do
+        if [ "${DOCKER_VLLM_FLAGS[$i]}" == "${VLLM_PORT}" ] && [ "${DOCKER_VLLM_FLAGS[$((i-1))]}" == "--port" ]; then
+            DOCKER_VLLM_FLAGS[$i]=8000
+        fi
+    done
+
     docker run -d --name vllm-server \
         --runtime nvidia \
         --gpus all \
@@ -56,23 +100,22 @@ else
         -e HF_TOKEN="${HF_TOKEN}" \
         --ipc=host \
         vllm/vllm-openai:latest \
-        serve "${MODEL_ID}" \
-        --host 0.0.0.0 \
-        --port 8000 \
-        --trust-remote-code
+        serve "${DOCKER_VLLM_FLAGS[@]}"
 fi
 
-# 4. Health check loop
+# 5. Health check loop
 # We check on localhost:VLLM_PORT if direct, or localhost:VLLM_PORT (mapped) if Docker.
 # Note: In both cases, the external-facing port is VLLM_PORT.
 echo "Waiting for vLLM server to start at http://localhost:${VLLM_PORT}/v1/models (this may take time)..."
 MAX_RETRIES=60
 RETRY_COUNT=0
 
+CHECK_MODEL="${SERVED_MODEL_NAME:-${MODEL_ID}}"
+
 while true; do
-    # Try to fetch models and check for the specific model ID
-    if curl -s "http://localhost:${VLLM_PORT}/v1/models" | grep -q "${MODEL_ID}"; then
-        echo "vLLM server is UP and READY with model ${MODEL_ID}."
+    # Try to fetch models and check for the specific model ID or alias
+    if curl -s "http://localhost:${VLLM_PORT}/v1/models" | grep -q "${CHECK_MODEL}"; then
+        echo "vLLM server is UP and READY with model ${CHECK_MODEL}."
         break
     fi
     

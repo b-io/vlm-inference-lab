@@ -28,7 +28,7 @@ Write-Host "VM Provisioned at: $VM_IP"
 Write-Host "Starting vLLM on Remote VM..."
 # We assume standard SSH is available and key is configured
 $HF_TOKEN_VAL = if ($env:HF_TOKEN) { $env:HF_TOKEN } else { "" }
-ssh -o StrictHostKeyChecking=no $VM_IP "cd vlm-inference-lab && HF_TOKEN='$HF_TOKEN_VAL' ./scripts/start_vllm_remote.sh '$MODEL'"
+ssh -o StrictHostKeyChecking=no $VM_IP "cd vlm-inference-lab && HF_TOKEN='$HF_TOKEN_VAL' ./scripts/azure/start_vllm.sh '$MODEL'"
 
 # 3. Wait for Healthcheck
 Write-Host "Waiting for vLLM to be healthy (this may take a few minutes for model download)..."

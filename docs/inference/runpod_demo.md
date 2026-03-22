@@ -53,25 +53,38 @@ Use this if you launched a pod using a **vLLM template** that is already running
 3. Set `MODEL_ID` (e.g., `facebook/opt-125m`).
 4. Run:
    ```bash
-   ./scripts/demo_runpod_end_to_end.sh
+   ./scripts/runpod/demo_end_to_end.sh
    ```
 
 ### Mode B: Deploy from Local Machine over SSH (Generic Remote)
 Use this to deploy vLLM from your local machine to a **generic GPU VM/pod** (e.g., a PyTorch template).
 
 1. Set `RUNPOD_MODE=generic` in `.env.runpod`.
-2. Provide `RUNPOD_SSH_HOST`, `RUNPOD_SSH_PORT`, `RUNPOD_SSH_USER`, and `RUNPOD_SSH_KEY_PATH`.
-3. Provide `RUNPOD_BASE_URL` (e.g., `http://<pod-ip>:8000/v1`).
-4. Set `MODEL_ID` (e.g., `facebook/opt-125m`).
-5. Run:
+2. Configure **SSH Strategy**:
+   - `RUNPOD_SSH_MODE=auto` (Try direct TCP first, then proxied SSH bootstrap).
+   - If using `auto` or `proxied`, set `RUNPOD_PROXY_SSH_TARGET` (e.g., `j0axhra8c4u1mi-64411b50@ssh.runpod.io`).
+3. Provide `RUNPOD_SSH_HOST`, `RUNPOD_SSH_PORT`, `RUNPOD_SSH_USER`, and `RUNPOD_SSH_KEY_PATH`.
+   - **IMPORTANT**: Use the **"SSH over exposed TCP"** endpoint (e.g., `ssh root@194.68.xxx.xxx -p 22106`).
+4. Provide `RUNPOD_BASE_URL` (e.g., `https://<pod-id>-8000.proxy.runpod.net/v1`).
+5. Set `MODEL_ID` (e.g., `facebook/opt-125m`).
+6. Run:
    ```bash
-   ./scripts/demo_runpod_end_to_end.sh
+   ./scripts/runpod/demo_end_to_end.sh
    ```
 
+> [!TIP]
+> **SSH Bootstrapping**: If your pod doesn't have `sshd` running on port 22, the orchestrator can automatically install and start it via the **Proxied SSH** target (`ssh.runpod.io`). This requires `RUNPOD_PROXY_SSH_TARGET` to be set.
+
+> [!WARNING]
+> **Managed Service Protection**: If the orchestrator detects an already-running vLLM service, it will refuse to mutate the pod in `generic` mode by default. You can override this with `RUNPOD_ALLOW_MANAGED_INSTANCE_MUTATION=true` if necessary.
+
 The script will:
-1. (Generic mode only) SSH into the pod and upload/start vLLM.
-2. Wait for the model to load and the health check to pass via the proxy or direct URL.
-3. Run a benchmark from your local machine against the remote endpoint.
+1. Detect if the host is a managed vLLM service.
+2. Verify SSH connectivity (with automatic bootstrap if needed).
+3. Verify SCP/SFTP capability (falling back to SSH-only file creation if direct SCP fails).
+4. SSH into the pod and upload/start vLLM.
+5. Wait for the model to load and the health check to pass via the `RUNPOD_BASE_URL`.
+6. Run a benchmark from your local machine against the remote endpoint.
 
 ## 5. Manual CLI Operations
 
@@ -80,14 +93,15 @@ If you prefer to run steps individually:
 ### Start vLLM on the Remote Pod
 ```bash
 # On your local machine
-ssh -p <ssh-port> root@<ssh-host> "mkdir -p ~/vlm-inference-lab/scripts/cloud"
-scp -P <ssh-port> scripts/cloud/runpod_start_vllm.sh root@<ssh-host>:~/vlm-inference-lab/scripts/cloud/
-ssh -p <ssh-port> root@<ssh-host> "bash ~/vlm-inference-lab/scripts/cloud/runpod_start_vllm.sh facebook/opt-125m"
+ssh -p <ssh-port> root@<ssh-host> "mkdir -p ~/vlm-inference-lab/scripts/runpod"
+scp -P <ssh-port> scripts/runpod/start_vllm.sh root@<ssh-host>:~/vlm-inference-lab/scripts/runpod/
+ssh -p <ssh-port> root@<ssh-host> "bash ~/vlm-inference-lab/scripts/runpod/start_vllm.sh facebook/opt-125m"
 ```
 
 ### Run Benchmark Locally
 ```bash
-./scripts/benchmark_remote.sh http://<pod-ip>:8000/v1 facebook/opt-125m
+# Recommended: use the Runpod proxy URL
+./scripts/benchmark_remote.sh https://<pod-id>-8000.proxy.runpod.net/v1 facebook/opt-125m
 ```
 
 ## 6. Cleanup

@@ -65,6 +65,15 @@ Models request arrival patterns and dynamic batching policies to analyze P-metri
 Illustrates the 'Dual Encoder' (CLIP-style) architecture using mock embeddings to show how text and image information is aligned in a shared latent space.
 - **Read more**: [Multimodal Embeddings](docs/vlm/embeddings.md)
 
+### 4. Remote Orchestration: Runpod
+*Location: `scripts/runpod/demo_end_to_end.ps1` (or `.sh`)*
+
+Supports two modes for remote VLM serving:
+- **existing**: Benchmarks a pod already running vLLM via the Runpod proxy URL. No SSH required.
+- **generic**: Deploys vLLM from your local machine to a remote GPU host, then benchmarks it.
+- **Features**: Automatic model ID resolution, SSH bootstrapping via proxied SSH, direct TCP SSH/SCP support with fallback to SSH-only file creation, and managed-instance safety guards.
+- **Read more**: [Runpod Demo Guide](docs/inference/runpod_demo.md)
+
 ## How to Run
 
 ### Python Environment

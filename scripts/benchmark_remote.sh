@@ -6,10 +6,24 @@ set -euo pipefail
 
 BASE_URL=${1:?Required base_url}
 MODEL_ID=${2:?Required model_id}
-NUM_REQUESTS=${3:-10}
-CONCURRENCY=${4:-2}
-shift 4 || true
-EXTRA_ARGS="$*"
+shift 2
+
+NUM_REQUESTS=10
+CONCURRENCY=2
+
+# Check if next arg is numeric (num_requests)
+if [[ $# -gt 0 && "$1" =~ ^[0-9]+$ ]]; then
+    NUM_REQUESTS="$1"
+    shift
+fi
+
+# Check if next arg is numeric (concurrency)
+if [[ $# -gt 0 && "$1" =~ ^[0-9]+$ ]]; then
+    CONCURRENCY="$1"
+    shift
+fi
+
+EXTRA_ARGS=("$@")
 
 OUTPUT_DIR="results/remote"
 mkdir -p "${OUTPUT_DIR}"
@@ -26,13 +40,16 @@ echo "--------------------------------------------------------"
 export PYTHONPATH="source:${PYTHONPATH:-}"
 
 # Run the benchmark
-python3 -m vlm_inference_lab.experiments.benchmark_serving \
+if ! python3 -m vlm_inference_lab.experiments.benchmark_serving \
     --url "${BASE_URL}" \
     --model "${MODEL_ID}" \
     --num-requests "${NUM_REQUESTS}" \
     --concurrency "${CONCURRENCY}" \
     --output-dir "${OUTPUT_DIR}" \
-    ${EXTRA_ARGS}
+    "${EXTRA_ARGS[@]}"; then
+    echo "Error: Python benchmark script failed."
+    exit 1
+fi
 
 echo "--------------------------------------------------------"
 echo "Benchmark Complete"

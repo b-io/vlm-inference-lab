@@ -31,11 +31,11 @@ echo "--------------------------------------------------------"
 # 2. Upload startup script to pod
 echo "Uploading startup script to instance..."
 ssh -o StrictHostKeyChecking=no -p "${LAMBDA_SSH_PORT}" "${REMOTE_HOST}" "mkdir -p ~/vlm-inference-lab"
-scp -o StrictHostKeyChecking=no -P "${LAMBDA_SSH_PORT}" scripts/cloud/runpod_start_vllm.sh "${REMOTE_HOST}:~/vlm-inference-lab/"
+scp -o StrictHostKeyChecking=no -P "${LAMBDA_SSH_PORT}" scripts/runpod/start_vllm.sh "${REMOTE_HOST}:~/vlm-inference-lab/start_vllm.sh"
 
 # 3. Start vLLM on the pod
 echo "Starting vLLM on the instance (this may take time)..."
-ssh -o StrictHostKeyChecking=no -p "${LAMBDA_SSH_PORT}" "${REMOTE_HOST}" "bash ~/vlm-inference-lab/runpod_start_vllm.sh '${MODEL_ID}' '${HF_TOKEN}' '${VLLM_PORT}'"
+ssh -o StrictHostKeyChecking=no -p "${LAMBDA_SSH_PORT}" "${REMOTE_HOST}" "bash ~/vlm-inference-lab/start_vllm.sh '${MODEL_ID}' '${HF_TOKEN}' '${VLLM_PORT}'"
 
 # 4. Run the benchmark locally against the remote pod
 echo "Running local benchmark against remote instance..."

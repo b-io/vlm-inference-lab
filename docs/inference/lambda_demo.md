@@ -37,7 +37,7 @@ This guide explains how to run a real-world VLM inference benchmark using **Lamb
 The orchestrator script for Lambda works similarly to the Runpod one, handling remote startup and local benchmarking.
 
 ```bash
-./scripts/demo_lambda_end_to_end.sh
+./scripts/lambda/demo_end_to_end.sh
 ```
 
 ## 5. Manual Setup on Lambda Instance

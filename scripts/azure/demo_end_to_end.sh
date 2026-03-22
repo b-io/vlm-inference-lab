@@ -25,7 +25,7 @@ echo "VM Provisioned at: $VM_IP"
 
 # 2. Start vLLM on remote VM
 echo "Starting vLLM on Remote VM..."
-ssh -o StrictHostKeyChecking=no $VM_IP "cd vlm-inference-lab && HF_TOKEN=$HF_TOKEN ./scripts/start_vllm_remote.sh $MODEL"
+ssh -o StrictHostKeyChecking=no $VM_IP "cd vlm-inference-lab && HF_TOKEN=$HF_TOKEN ./scripts/azure/start_vllm.sh $MODEL"
 
 # 3. Wait for Healthcheck
 echo "Waiting for vLLM to be healthy (this may take a few minutes for model download)..."
