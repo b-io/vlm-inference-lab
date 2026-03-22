@@ -66,8 +66,8 @@ python -m vlm_inference_lab.profiling.cuda_runner --source resources/vlm_inferen
 
 - **Why the naive version is slower**: Thousands of threads (65,536 blocks * 256 threads) all attempting to `atomicAdd`
   to a *single* memory address in global memory. This causes massive serialization at the memory controller level.
-- **What changed in the optimized version**: Each thread first loads its data into **Shared Memory**. Then, a *
-  *Tree-based reduction** is performed *on-chip*. Finally, only **one** `atomicAdd` per block is performed to global
+- **What changed in the optimized version**: Each thread first loads its data into **Shared Memory**. Then, a
+  **Tree-based reduction** is performed *on-chip*. Finally, only **one** `atomicAdd` per block is performed to global
   memory. This reduces global atomic contention by 256x.
 - **Bottleneck remaining**: At ~0.8ms for 16.7M elements (67MB), we are hitting ~83 GB/s. On high-end cards, the
   bottleneck is now purely the **Global Memory Bandwidth**.

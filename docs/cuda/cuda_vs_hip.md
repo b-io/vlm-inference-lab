@@ -5,9 +5,9 @@ reason about portability.
 
 ## Overview
 
-As the AI hardware landscape expands beyond NVIDIA, understanding **HIP (Heterogeneous-compute Interface for
-Portability)** is crucial. HIP is AMD's C++ runtime API that allows developers to write portable code that can run on
-both NVIDIA and AMD GPUs.
+As the AI hardware landscape expands beyond NVIDIA, understanding
+**HIP (Heterogeneous-compute Interface for Portability)** is crucial. HIP is AMD's C++ runtime API that allows
+developers to write portable code that can run on both NVIDIA and AMD GPUs.
 
 ## Key Differences
 

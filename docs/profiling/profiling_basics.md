@@ -19,8 +19,8 @@ memory are being spent in a system.
 
 ## Common Bottleneck Signals
 
-- **High Latency, Low Memory Throughput**: Likely a **compute-bound** kernel (e.g., complex math) or high *
-  *synchronization overhead** (e.g., too many `__syncthreads()`).
+- **High Latency, Low Memory Throughput**: Likely a **compute-bound** kernel (e.g., complex math) or high
+  **synchronization overhead** (e.g., too many `__syncthreads()`).
 - **Low Latency, High Memory Throughput**: Likely a **memory-bound** kernel (e.g., Vector Add, LayerNorm). Performance
   is limited by how fast we can pull data from HBM.
 - **Large Gaps in Timeline**: Likely a **CPU bottleneck**. The GPU is fast, but the CPU can't schedule kernels quickly

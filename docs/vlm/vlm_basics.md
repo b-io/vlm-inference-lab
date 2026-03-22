@@ -10,8 +10,8 @@ A useful mental model is:
 - a **language module** that reasons over text and often generates output
 - an **alignment or fusion mechanism** that lets the model connect the two modalities
 
-VLMs are not all the same. Some are optimized for **retrieval**, others for **grounded reasoning**, and others for *
-*multimodal generation**. Those choices strongly affect both model behavior and serving cost.
+VLMs are not all the same. Some are optimized for **retrieval**, others for **grounded reasoning**, and others for
+**multimodal generation**. Those choices strongly affect both model behavior and serving cost.
 
 ## What problems VLMs solve
 

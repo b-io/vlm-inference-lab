@@ -1,7 +1,7 @@
 # Lambda Labs GPU Serving Demo
 
-This guide explains how to run a real-world VLM inference benchmark using **Lambda Labs** as the GPU provider and **vLLM
-** as the serving engine.
+This guide explains how to run a real-world VLM inference benchmark using **Lambda Labs** as the GPU provider and
+**vLLM** as the serving engine.
 
 ## 🕒 Estimated Setup Time: 5–10 minutes
 
@@ -71,6 +71,6 @@ If you prefer to run steps manually on the remote instance:
 
 ## 💡 Troubleshooting
 
-- **No Capacity**: Lambda H100s/A100s are often in high demand. If none are available, try another region or check *
-  *Runpod** as our primary provider.
+- **No Capacity**: Lambda H100s/A100s are often in high demand. If none are available, try another region or check
+  **Runpod** as our primary provider.
 - **Firewall**: Ensure your local IP has access to port 8000 and 22 if you configured a security group.

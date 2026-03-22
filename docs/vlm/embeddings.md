@@ -18,8 +18,8 @@ each other in a high-dimensional space.
 
 ### 2. Fusion / Generative Models (e.g., LLaVA, Flamingo)
 
-- **Architecture**: A vision encoder connected to a Large Language Model (LLM) via a **projection layer** or **adapter
-  **.
+- **Architecture**: A vision encoder connected to a Large Language Model (LLM) via a **projection layer** or
+  **adapter**.
 - **Mechanism**: Visual features are treated as "visual tokens" and concatenated with text tokens.
 - **Inference**: The LLM "reads" the image tokens to generate a response.
 - **Pros**: Deep reasoning, complex VQA, and document understanding.

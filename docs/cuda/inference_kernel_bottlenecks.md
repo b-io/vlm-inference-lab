@@ -4,8 +4,8 @@ This document connects generic CUDA/HIP knowledge to operator-level reasoning ab
 
 ## 1. The key question
 
-When serving a VLM, which operators dominate runtime, and are they limited by **compute**, **memory bandwidth**, or *
-*scheduler / launch overhead**?
+When serving a VLM, which operators dominate runtime, and are they limited by **compute**, **memory bandwidth**, or
+**scheduler / launch overhead**?
 
 ## 2. Arithmetic intensity and roofline intuition
 

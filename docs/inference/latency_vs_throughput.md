@@ -5,8 +5,8 @@ multimodal inference serving.
 
 ## The Core Tradeoff: Batching
 
-In Vision-Language Models (VLMs), GPU utilization is highly dependent on batch size. Larger batches typically increase *
-*throughput** (more requests per second) but also increase **latency** (each request waits longer for the batch to fill
+In Vision-Language Models (VLMs), GPU utilization is highly dependent on batch size. Larger batches typically increase
+**throughput** (more requests per second) but also increase **latency** (each request waits longer for the batch to fill
 and takes longer to process).
 
 ### Simulation Results (Reference Run)

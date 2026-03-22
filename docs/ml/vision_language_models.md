@@ -265,8 +265,8 @@ In projector + LLM systems:
 - the vision features are usually **not directly comparable** to language embeddings at first
 - the projector learns how to map the visual representation into the space the LLM can consume
 
-So this is not mainly about nearest-neighbor matching in a shared retrieval space. It is about **conditioning a
-generative language model on visual information**.
+So this is not mainly about nearest-neighbor matching in a shared retrieval space. It is about
+**conditioning a generative language model on visual information**.
 
 ## 4) Query-bridge architectures
 
