@@ -102,7 +102,7 @@ Take
 $$
 z_1 = w_1x + b_1,
 \qquad
-h = \operatorname{ReLU}(z_1),
+h = \mathrm{ReLU}(z_1),
 $$
 
 $$

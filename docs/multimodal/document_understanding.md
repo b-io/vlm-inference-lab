@@ -107,7 +107,7 @@ $$
 A layout-biased attention layer can be written abstractly as
 
 $$
-\operatorname{Attention}(Q,K,V)=\operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d}} + B_{\text{layout}}\right)V,
+\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d}} + B_{\text{layout}}\right)V,
 $$
 
 where $B_{\text{layout}}$ biases attention using relative spatial geometry.

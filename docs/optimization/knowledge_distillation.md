@@ -59,7 +59,7 @@ The factor $T^2$ compensates for gradient rescaling under temperature smoothing.
 At $T=1$, the softmax may be too sharp. Larger $T$ reveals richer probability structure:
 
 $$
-\operatorname{softmax}_T(z)_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}.
+\left[\mathrm{softmax}_T(z)\right]_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}.
 $$
 
 - large $T$ gives smoother targets
@@ -139,7 +139,7 @@ makes the role of the two terms explicit.
 Let
 
 $$
-q_i(T) = \operatorname{softmax}(z_i / T),
+q_i(T) = \left[\mathrm{softmax}(z / T)\right]_i,
 $$
 
 and consider a KL term between softened teacher and student distributions. Because the logits are divided by $T$, the

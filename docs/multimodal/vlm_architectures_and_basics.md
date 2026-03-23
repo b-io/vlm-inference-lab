@@ -141,7 +141,7 @@ that let the language model attend to visual information.
 A simple abstraction is:
 
 $$
-h_\ell' = h_\ell + \operatorname{CrossAttn}\!\left(h_\ell, R(V)\right),
+h_\ell' = h_\ell + \mathrm{CrossAttn}\!\left(h_\ell, R(V)\right),
 $$
 
 where:
@@ -275,7 +275,7 @@ information from a frozen image encoder before passing a compact representation 
 A useful abstraction is
 
 $$
-Q' = \operatorname{QFormer}(Q, V),
+Q' = \mathrm{QFormer}(Q, V),
 $$
 
 where $Q\in\mathbb{R}^{q\times d}$ is a learned query set and $V$ are visual features from the image encoder.
