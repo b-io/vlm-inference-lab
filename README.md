@@ -32,7 +32,11 @@ hardware execution.
 - **Hardware Portability**:
   Reasoning about [NVIDIA (CUDA) vs. AMD (HIP/ROCm)](docs/systems/cuda_vs_hip.md) serving.
 - **Documentation Backbone**:
-  Start with the [documentation map](docs/README.md), which groups the notes by topic and by suggested reading path.
+  Start with the [documentation map](docs/README.md), which groups the notes by topic and by suggested reading path. For
+  the tree-based ML notes, the recommended conceptual order is [decision trees](docs/fundamentals/decision_trees.md) as
+  the base learner, [ensemble methods](docs/fundamentals/ensemble_methods.md) as the umbrella theory, then
+  [random forests](docs/fundamentals/random_forests.md) and
+  [gradient-boosted trees](docs/fundamentals/gradient_boosted_trees.md) as the main tree-ensemble families.
 
 ## Repository Layout
 
@@ -163,6 +167,7 @@ eduction.exe
 - ✅ **Remote Orchestration**: Production-ready Runpod/vLLM benchmark wrappers.
 - ✅ **Reference Docs**:
   - [Documentation map](docs/README.md)
+  - [Tree-based ML path: decision trees → ensemble methods → random forests → gradient-boosted trees](docs/fundamentals/ensemble_methods.md)
   - [Neural architecture tradeoffs](docs/architectures/neural_architecture_tradeoffs.md)
   - [RNN gradient stability](docs/architectures/rnn_lstm_gru_and_gradient_stability.md)
   - [VLM architectures](docs/multimodal/vlm_architectures_and_basics.md)

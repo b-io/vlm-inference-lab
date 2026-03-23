@@ -3,6 +3,14 @@
 This note summarizes **when one model family is better suited than another**, what problem each family is solving, and
 the main tradeoffs that drive the choice.
 
+Related notes:
+
+- [Linear models and losses](linear_models_and_losses.md)
+- [Decision trees](decision_trees.md)
+- [Ensemble methods](ensemble_methods.md)
+- [Random forests](random_forests.md)
+- [Gradient-boosted trees](gradient_boosted_trees.md)
+
 ## 1) The selection problem
 
 Choosing a model is usually an optimization over several objectives at once:
@@ -27,18 +35,24 @@ about matching these assumptions to the problem.
 
 ## 2) Fast mental model
 
-| Data / task regime                                  | Often strong default                        | Why                                                                                       |
-|-----------------------------------------------------|---------------------------------------------|-------------------------------------------------------------------------------------------|
-| Small or medium-size **tabular** data               | Gradient-boosted trees                      | Strong performance with little preprocessing; handles nonlinear feature interactions well |
-| Tabular data with strict **interpretability** needs | Linear / logistic regression, shallow trees | Easy to inspect coefficients or decision paths                                            |
-| High-dimensional sparse text (classical NLP)        | Linear models on bag-of-words / TF-IDF      | Strong baseline, cheap, robust, often hard to beat on small datasets                      |
-| Long-range **sequence modeling**                    | Transformers                                | Self-attention models long-range dependencies and parallelizes training                   |
-| Short sequences / streaming with tight memory       | RNN / GRU / temporal CNN                    | Lower state size, natural online processing                                               |
-| Natural images with translation-local structure     | CNNs                                        | Convolution encodes locality and weight sharing                                           |
-| Large-scale vision with enough data / compute       | Vision Transformers                         | Flexible global context modeling, strong scaling behavior                                 |
-| Multimodal image+text reasoning                     | VLMs                                        | Joint or aligned vision-language representations                                          |
-| Very small datasets                                 | Simpler models, transfer learning           | Lower variance and better sample efficiency                                               |
-| High-stakes deployment needing explanation          | Linear models, GAMs, trees                  | Easier to audit and communicate                                                           |
+| Data / task regime                                  | Often strong default                                                                            | Why                                                                                       | Documentation                                                                                                                                              |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Small or medium-size **tabular** data               | [Gradient-boosted trees](gradient_boosted_trees.md)                                             | Strong performance with little preprocessing; handles nonlinear feature interactions well | [GBM / LightGBM / XGBoost / CatBoost](gradient_boosted_trees.md)                                                                                           |
+| Tabular data with strict **interpretability** needs | [Linear / logistic regression](linear_models_and_losses.md), [shallow trees](decision_trees.md) | Easy to inspect coefficients or decision paths                                            | [Linear models](linear_models_and_losses.md), [Decision trees](decision_trees.md)                                                                          |
+| High-dimensional sparse text (classical NLP)        | [Linear models](linear_models_and_losses.md) on bag-of-words / TF-IDF                           | Strong baseline, cheap, robust, often hard to beat on small datasets                      | [Linear models and losses](linear_models_and_losses.md)                                                                                                    |
+| Long-range **sequence modeling**                    | [Transformers](../transformers/transformers_tokenization_and_decoding.md)                       | Self-attention models long-range dependencies and parallelizes training                   | [Transformers, tokenization, and decoding](../transformers/transformers_tokenization_and_decoding.md)                                                      |
+| Short sequences / streaming with tight memory       | [RNN / GRU / temporal CNN](../architectures/sequential_models.md)                               | Lower state size, natural online processing                                               | [Sequential models](../architectures/sequential_models.md), [RNN/LSTM/GRU and gradient stability](../architectures/rnn_lstm_gru_and_gradient_stability.md) |
+| Natural images with translation-local structure     | [CNNs](../architectures/vision_models.md)                                                       | Convolution encodes locality and weight sharing                                           | [Vision models](../architectures/vision_models.md)                                                                                                         |
+| Large-scale vision with enough data / compute       | [Vision Transformers](../architectures/vision_models.md)                                        | Flexible global context modeling, strong scaling behavior                                 | [Vision models](../architectures/vision_models.md)                                                                                                         |
+| Multimodal image+text reasoning                     | [VLMs](../multimodal/vlm_architectures_and_basics.md)                                           | Joint or aligned vision-language representations                                          | [VLM architectures and basics](../multimodal/vlm_architectures_and_basics.md)                                                                              |
+| Very small datasets                                 | [Simpler models](linear_models_and_losses.md), transfer learning                                | Lower variance and better sample efficiency                                               | [Linear models](linear_models_and_losses.md), [Decision trees](decision_trees.md)                                                                          |
+| High-stakes deployment needing explanation          | [Linear models](linear_models_and_losses.md), GAMs, [trees](decision_trees.md)                  | Easier to audit and communicate                                                           | [Linear models](linear_models_and_losses.md), [Decision trees](decision_trees.md)                                                                          |
+
+A tabular-data shortcut that often works well in practice is:
+
+1. start with a simple baseline such as linear/logistic regression
+2. try a [random forest](random_forests.md) when you want a robust low-tuning ensemble
+3. try [gradient-boosted trees](gradient_boosted_trees.md) when predictive accuracy is the main priority
 
 ---
 
@@ -69,6 +83,8 @@ $$
 
 **Tradeoff:** low variance and easy optimization, but limited expressivity unless features are engineered carefully.
 
+See also: [Linear models and losses](linear_models_and_losses.md).
+
 ---
 
 ### Decision trees
@@ -87,22 +103,58 @@ impurity; for regression, to reduce variance.
 
 **Tradeoff:** single trees are interpretable but unstable and can overfit.
 
+See also: [Decision trees](decision_trees.md).
+
+---
+
+### Ensemble methods
+
+An ensemble combines several models so the final predictor is better than a single model.
+The umbrella theory is [ensemble methods](ensemble_methods.md), and the most important ensemble families for tabular ML
+are:
+
+- **averaging / voting**: combine independently trained predictors
+- **bagging**: train models independently on bootstrap samples, then average
+- **random forests**: bagged decision trees with feature subsampling
+- **boosting**: train models sequentially so each one corrects current errors
+- **stacking**: train a meta-model on the predictions of several base learners
+
+**Why ensembles help:** if the component models are reasonably accurate and not perfectly correlated, aggregation can
+reduce variance or improve the bias-variance tradeoff.
+
+See also: [Ensemble methods](ensemble_methods.md).
+
 ---
 
 ### Random forests
 
 A random forest averages many trees grown on bootstrap samples with feature subsampling.
 
-**What it exploits:** the same tree bias as above, but reduces variance by averaging decorrelated trees.
+**What it exploits:** the same tree bias as a single decision tree, but with much better generalization through bagging
+and decorrelation.
+
+**How the algorithm works:**
+
+1. draw a bootstrap sample for each tree
+2. grow a tree on that sample
+3. at every split, only consider a random subset of candidate features
+4. repeat for many trees
+5. aggregate predictions by averaging or voting
+
+**Why bagging helps:** averaging many unstable trees reduces variance; feature subsampling makes the trees less
+correlated, which makes the averaging more effective.
 
 **When it is better suited than a single tree:**
 
 - tabular problems where variance is a concern
 - strong baseline needed with limited tuning
 - robustness matters more than interpretability of a single path
+- you want a safe default before spending time on heavier tuning
 
 **Tradeoff:** better generalization than one tree, but less interpretable and often weaker than gradient boosting on
 many structured tabular datasets.
+
+See also: [Random forests](random_forests.md).
 
 ---
 
@@ -118,14 +170,28 @@ $$
 
 **What it exploits:** complex nonlinear interactions in tabular data with strong bias-variance control.
 
+**How the algorithm works:**
+
+1. initialize with a constant prediction
+2. compute pseudo-residuals or negative gradients under the current model
+3. fit a small regression tree to those residual targets
+4. add the new tree to the ensemble with a small learning rate
+5. repeat until the validation metric stops improving
+
+**Where LightGBM fits:** LightGBM is an optimized GBM implementation that uses histogram-based split finding and usually
+leaf-wise tree growth, which can make training faster and more memory-efficient on large tabular datasets.
+
 **When it is better suited:**
 
 - structured tabular data
 - mixed numeric/categorical signals
-- moderate dataset sizes
+- moderate-to-large dataset sizes
 - competition-style predictive accuracy on business data
+- settings where [LightGBM](gradient_boosted_trees.md), XGBoost, or CatBoost are strong practical choices
 
 **Tradeoff:** powerful on tabular tasks, but less natural for raw text, audio, or image inputs.
+
+See also: [Gradient-boosted trees](gradient_boosted_trees.md).
 
 ---
 
@@ -178,6 +244,8 @@ the right bias for natural images.
 **Tradeoff:** excellent inductive bias for local spatial structure, but less flexible for arbitrary long-range
 interactions unless depth/receptive field is increased.
 
+See also: [Vision models](../architectures/vision_models.md).
+
 ---
 
 ### RNN / LSTM / GRU
@@ -201,6 +269,9 @@ LSTMs add gates to control memory flow.
 
 **Tradeoff:** sequential computation limits parallelism and long-range dependency handling.
 
+See also: [Sequential models](../architectures/sequential_models.md) and
+[RNN, LSTM, GRU, and gradient stability](../architectures/rnn_lstm_gru_and_gradient_stability.md).
+
 ---
 
 ### Transformers
@@ -223,6 +294,8 @@ $$
 **Tradeoff:** quadratic attention cost in sequence length for full attention, higher memory use, and often more
 data-hungry.
 
+See also: [Transformers, tokenization, and decoding](../transformers/transformers_tokenization_and_decoding.md).
+
 ---
 
 ### Vision Transformers
@@ -236,6 +309,8 @@ A ViT splits an image into patches, projects patches to tokens, then applies Tra
 - unified architectures across modalities
 
 **Tradeoff:** weaker built-in locality bias; typically needs more data or augmentation than CNNs from scratch.
+
+See also: [Vision models](../architectures/vision_models.md).
 
 ---
 
@@ -254,6 +329,8 @@ A VLM couples a vision encoder with a language model or learns aligned image-tex
 - agentic systems that need image-grounded reasoning
 
 **Tradeoff:** more complex pipelines, larger compute cost, and multimodal failure modes.
+
+See also: [VLM architectures and basics](../multimodal/vlm_architectures_and_basics.md).
 
 ---
 
@@ -282,9 +359,9 @@ Examples: credit risk, churn, fraud features, pricing.
 
 **Usually start with:**
 
-- gradient-boosted trees
-- linear/logistic regression as a baseline
-- maybe random forest for robustness
+- [gradient-boosted trees](gradient_boosted_trees.md)
+- [linear/logistic regression](linear_models_and_losses.md) as a baseline
+- maybe a [random forest](random_forests.md) for robustness
 
 **Why not default to a deep NN?**
 Tabular data is often low-dimensional, heterogeneous, and sample sizes are moderate. Tree ensembles often dominate
@@ -318,127 +395,120 @@ Examples: sensor data, logs, demand forecasting.
 
 - simple autoregressive / linear baselines for strong short-term structure
 - boosted trees for feature-rich tabularized forecasting
-- RNN/TCN for sequential online settings
-- Transformers when long context and many interacting signals matter
+- RNNs, temporal CNNs, or Transformers when sequence structure itself matters strongly
 
-No single sequential model dominates all time-series problems.
+**Why no single winner?**
+Temporal tasks differ in whether the key structure lies in lag features, latent state dynamics, long-range dependency,
+seasonality, or exogenous signals.
 
 ---
 
-### Computer vision
+### Image recognition
 
 Examples: classification, detection, segmentation.
 
-**Smaller data or strong locality bias needed:**
+**Usually start with:**
 
-- CNNs
+- CNNs if data is moderate and strong locality bias helps
+- ViTs if pretraining and scale are available
 
-**Large pretraining or foundation-model setting:**
-
-- ViTs
-
-CNNs are often better when data is limited because locality and weight sharing are useful priors. ViTs are often better
-when massive pretraining weakens the need for hand-designed inductive bias.
+**Reason:** the spatial structure of images is the dominant inductive-bias driver.
 
 ---
 
-### Multimodal systems
+### Multimodal reasoning
 
-Examples: OCR + reasoning, chart QA, document QA, image-grounded assistants.
+Examples: image captioning, VQA, document QA.
 
-**Better suited model:**
+**Usually start with:**
 
-- VLM, or a pipeline with a vision encoder plus text model
+- a pretrained VLM or an image encoder + language model stack
 
-Why? The task is not only vision or only language; the model must align visual evidence to linguistic reasoning.
+**Why?**
+The core problem is alignment between vision and language representations, not just classification within one modality.
 
 ---
 
-## 6) How constraints change the answer
+## 6) Selection by constraints, not just task
 
-### Interpretability
+Sometimes the model family is chosen less by the raw task and more by operational constraints.
 
-Prefer:
-
-- linear/logistic regression
-- generalized additive models
-- shallow trees
-
-Avoid using a more complex model unless the performance gain is worth the interpretability loss.
-
-### Latency
+### If interpretability dominates
 
 Prefer:
 
 - linear models
+- GAMs
 - shallow trees
-- small CNNs
-- compact RNNs
-- distilled Transformers
 
-Full attention Transformers and large VLMs can be too expensive for edge or real-time systems.
-
-### Data scarcity
+### If latency dominates
 
 Prefer:
 
-- simpler models
-- transfer learning
-- hand-crafted features where appropriate
+- small linear models
+- small tree ensembles
+- small CNNs / distilled Transformers depending on modality
 
-High-capacity models without enough data tend to overfit.
+### If data is scarce
 
-### Distribution shift
+Prefer:
 
-Models with strong pretraining or simpler decision boundaries may generalize better, but domain shift must be tested
-empirically. Ensembles and calibration often matter as much as architecture choice.
+- simpler models with strong priors
+- pretrained / transfer learning approaches
+- regularized classical models before very large networks from scratch
 
----
+### If compute is abundant and large pretraining exists
 
-## 7) Practical selection workflow
+Prefer:
 
-1. Define the task and metric clearly.
-2. Start with a **simple baseline**.
-3. Match model bias to the data modality.
-4. Prefer the simplest model that meets the metric and deployment constraints.
-5. Use ablations:
-    - better architecture?
-    - better features?
-    - more data?
-    - transfer learning?
-6. Evaluate calibration, latency, interpretability, and robustness, not only accuracy.
+- Transformer-family models for language and multimodal tasks
+- ViTs for vision
 
 ---
 
-## 8) Minimal code sketch
+## 7) A practical workflow for selection
+
+A good workflow is often:
+
+1. start with the simplest credible baseline
+2. match architecture to modality and structure
+3. evaluate under the real metric
+4. compare error types, not just aggregate score
+5. choose the simplest model that meets the operational goal
+
+Examples:
+
+- for tabular data: logistic regression $\rightarrow$ random forest $\rightarrow$ gradient boosting
+- for text: bag-of-words logistic regression $\rightarrow$ pretrained Transformer
+- for vision: pretrained CNN baseline $\rightarrow$ ViT if scale justifies it
+
+---
+
+## 8) Small code sketch
 
 ```python
-# A minimal model-selection loop in scikit-learn style
+# Not a universal recipe; just a workflow sketch.
+
 candidates = {
     "logreg": LogisticRegression(max_iter=1000),
-    "rf": RandomForestClassifier(n_estimators=300, random_state=0),
-    "xgb_like": HistGradientBoostingClassifier(random_state=0),
+    "rf": RandomForestClassifier(n_estimators=300),
+    "gbt": HistGradientBoostingClassifier(),
 }
 
 for name, model in candidates.items():
-    model.fit(X_train, y_train)
-    pred = model.predict_proba(X_valid)[:, 1] if hasattr(model, "predict_proba") else model.predict(X_valid)
-    # compute the metric relevant to the problem
+    score = cross_val_score(model, X_train, y_train, cv=5, scoring="roc_auc").mean()
+    print(name, score)
 ```
 
 The main point is not the code. It is that model selection is always task- and constraint-dependent.
 
 ---
 
-## 9) What to remember
+## What to remember
 
-- Prefer a model whose **inductive bias** matches the data.
+- Model selection is about matching inductive bias to data structure and operational constraints.
+- Simpler models win surprisingly often when data is limited or interpretability matters.
 - On tabular data, tree ensembles are often hard to beat.
-- On text and long sequences, Transformers dominate when enough data and compute are available.
-- On images, CNNs encode locality well; ViTs become very strong with scale and pretraining.
-- Simpler models are often better under limited data, strict latency, or strong interpretability requirements.
-
-## 10) Related notes
-
-For a more architecture-first summary across MLPs, CNNs, RNNs, Transformers, GNNs, diffusion backbones, and MoE,
-see [Neural architecture tradeoffs](../architectures/neural_architecture_tradeoffs.md).
+- Random forests are the main bagging-style default; gradient boosting and LightGBM-style methods are often the main
+  accuracy-first defaults.
+- Transformers, CNNs, ViTs, and VLMs win when the modality and scale match their architectural assumptions.

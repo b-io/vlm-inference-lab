@@ -1,12 +1,20 @@
 # Decision Trees
 
 A decision tree is a recursive partitioning algorithm that splits the input space into regions and predicts a constant
-label or value in each region.
+label or value in each leaf. It is a **single model**, not an ensemble method, but it is one of the most important base
+learners used inside tree ensembles.
 
 The model represents a piecewise-constant function:
 
 - **classification**: predict a class or class distribution in each leaf
 - **regression**: predict an average value in each leaf
+
+Related notes:
+
+- [Ensemble methods](ensemble_methods.md)
+- [Random forests](random_forests.md)
+- [Gradient-boosted trees](gradient_boosted_trees.md)
+- [Model selection and use cases](model_selection_and_use_cases.md)
 
 ## What problem the algorithm is solving
 
@@ -103,7 +111,48 @@ Inference complexity is roughly proportional to tree depth.
 - greedy training is not globally optimal
 - unconstrained trees overfit easily
 
-This is why ensembles such as Random Forests and Gradient Boosted Trees are so effective.
+## From a single tree to tree ensembles
+
+A single tree is often best viewed as the building block for stronger ensemble methods.
+
+### Why one deep tree can overfit
+
+Deep trees have low bias but high variance.
+They can react strongly to small perturbations in the data, especially when many splits are available.
+
+### Why bagging helps
+
+If we average many trees whose errors are not perfectly correlated, the variance drops.
+A useful approximation for the variance of the average of $B$ trees is
+
+$$
+\rho \sigma^2 + \frac{1-\rho}{B}\sigma^2,
+$$
+
+where $\sigma^2$ is the variance of an individual tree and $\rho$ is the pairwise correlation.
+
+This shows the two main levers:
+
+- more trees reduce the independent part of the variance
+- less correlation makes averaging much more effective
+
+### How this leads to random forests
+
+A [random forest](random_forests.md) uses:
+
+1. **bagging**: bootstrap samples of the data
+2. **feature subsampling**: random candidate features at each split
+3. **aggregation**: averaging or majority voting across trees
+
+This improves generalization mainly by reducing variance.
+
+### How boosting is different
+
+[Gradient-boosted trees](gradient_boosted_trees.md) do **not** train trees independently.
+They train trees sequentially so that each new tree corrects the current ensemble.
+
+That makes boosting more about stage-wise error correction and bias reduction, while bagging is more directly about
+variance reduction.
 
 ## Example
 
@@ -149,7 +198,8 @@ Cost-complexity pruning adds a penalty on the number of leaves.
 
 ## What to remember
 
-- Trees solve local impurity reduction problems by greedy splitting
-- They are flexible and interpretable, but unstable and prone to overfitting
-- They model interactions automatically, but only through hierarchical axis-aligned partitions
-- Ensembles reduce the variance and usually improve accuracy substantially
+- Trees solve local impurity reduction problems by greedy splitting.
+- They are flexible and interpretable, but unstable and prone to overfitting.
+- They model interactions automatically, but only through hierarchical axis-aligned partitions.
+- Random forests improve generalization mainly by bagging and variance reduction.
+- Gradient boosting builds a stronger predictor stage by stage from many small trees.

@@ -27,6 +27,27 @@ Examples:
 
 - a shallow tree often has higher bias
 - a deep unconstrained tree often has higher variance
+- a random forest often lowers variance relative to one tree
+- a boosted tree ensemble often lowers bias relative to one shallow tree while controlling variance through regularization
+
+## Why bagging can improve generalization
+
+Bagging is especially effective for unstable learners such as decision trees.
+
+If we average $B$ predictors with variance $\sigma^2$ and pairwise correlation $\rho$, the variance of the average is
+approximately
+
+$$
+\rho \sigma^2 + \frac{1-\rho}{B}\sigma^2.
+$$
+
+This makes the generalization story concrete:
+
+- averaging many models reduces the independent part of the noise
+- decorrelating the models makes averaging much more useful
+- this is exactly why [random forests](random_forests.md) work better than one deep tree
+
+So bagging improves generalization mainly by **reducing variance**.
 
 ## Cross-validation
 
@@ -40,6 +61,20 @@ Procedure:
 4. repeat and average
 
 This reduces dependence on one arbitrary split.
+
+## Out-of-bag evaluation
+
+Bootstrap-based ensembles such as random forests also provide a built-in validation signal.
+Because each tree is trained on a bootstrap sample, some examples are left out for that tree.
+Those examples are **out-of-bag** for that tree.
+
+OOB evaluation works by:
+
+1. collecting predictions for each example only from trees that did not train on it
+2. comparing those predictions with the true target
+3. computing a metric on the aggregated OOB predictions
+
+OOB estimates are not identical to cross-validation, but they are often a very practical estimate of generalization.
 
 ## Metrics
 
@@ -132,7 +167,8 @@ print(scores.mean(), scores.std())
 
 ## What to remember
 
-- Generalization, not training fit, is the real objective
-- Match the metric to the operational cost
-- Use the validation set for selection and the test set only once at the end
-- Watch for leakage, imbalance, and distribution shift
+- Generalization, not training fit, is the real objective.
+- Match the metric to the operational cost.
+- Use the validation set for selection and the test set only once at the end.
+- Bagging helps generalization mainly by reducing variance.
+- Watch for leakage, imbalance, and distribution shift.
