@@ -275,13 +275,13 @@ high page counts.
 
 ## 10. Comparison of major document families
 
-| Family                   | Best strength                             | Main weakness                                 | Best when                                      |
-|--------------------------|-------------------------------------------|-----------------------------------------------|------------------------------------------------|
-| OCR plus NLP             | interpretable, modular, controllable      | OCR error propagation                         | enterprise extraction pipelines                |
-| Layout-aware encoder     | strong text-layout fusion                 | depends on OCR and token quality              | forms, invoices, receipts, structured docs     |
-| Donut-style OCR-free     | end-to-end structured generation          | high-resolution tiny text remains hard        | specialized document extraction                |
-| Pix2Struct-style         | strong for visually situated generation   | not retrieval-first, still resolution-heavy   | screenshots, UIs, charts, mixed documents      |
-| VLM plus LLM             | flexible reasoning and instruction        | expensive and can hallucinate grounding       | open-ended QA over visually complex documents  |
+| Family               | Best strength                           | Main weakness                               | Best when                                     |
+|----------------------|-----------------------------------------|---------------------------------------------|-----------------------------------------------|
+| OCR plus NLP         | interpretable, modular, controllable    | OCR error propagation                       | enterprise extraction pipelines               |
+| Layout-aware encoder | strong text-layout fusion               | depends on OCR and token quality            | forms, invoices, receipts, structured docs    |
+| Donut-style OCR-free | end-to-end structured generation        | high-resolution tiny text remains hard      | specialized document extraction               |
+| Pix2Struct-style     | strong for visually situated generation | not retrieval-first, still resolution-heavy | screenshots, UIs, charts, mixed documents     |
+| VLM plus LLM         | flexible reasoning and instruction      | expensive and can hallucinate grounding     | open-ended QA over visually complex documents |
 
 ## 11. Why document understanding is hard for VLMs
 

@@ -432,27 +432,27 @@ language.
 
 ## 5. Architecture choice by product goal
 
-| Product goal                         | Usually start with                      | Why                                                                 |
-|--------------------------------------|-----------------------------------------|---------------------------------------------------------------------|
-| image-text retrieval                 | CLIP or SigLIP                          | shared embedding space and offline indexing                         |
-| zero-shot labeling                   | CLIP or SigLIP                          | promptable label space                                              |
-| multimodal assistant                 | LLaVA-style projector + LLM             | strong conversational interface                                     |
-| few-shot interleaved prompting       | Flamingo-style cross-attention          | better support for mixed image-text context                         |
-| parameter-efficient multimodal build | BLIP-2 or Q-Former bridge               | compact trainable bridge                                            |
-| screenshot or document generation    | Pix2Struct or another encoder-decoder   | output is naturally text or structure                               |
-| strict extraction over documents     | document-specific models                | layout, OCR, and high-resolution constraints dominate architecture  |
+| Product goal                         | Usually start with                    | Why                                                                |
+|--------------------------------------|---------------------------------------|--------------------------------------------------------------------|
+| image-text retrieval                 | CLIP or SigLIP                        | shared embedding space and offline indexing                        |
+| zero-shot labeling                   | CLIP or SigLIP                        | promptable label space                                             |
+| multimodal assistant                 | LLaVA-style projector + LLM           | strong conversational interface                                    |
+| few-shot interleaved prompting       | Flamingo-style cross-attention        | better support for mixed image-text context                        |
+| parameter-efficient multimodal build | BLIP-2 or Q-Former bridge             | compact trainable bridge                                           |
+| screenshot or document generation    | Pix2Struct or another encoder-decoder | output is naturally text or structure                              |
+| strict extraction over documents     | document-specific models              | layout, OCR, and high-resolution constraints dominate architecture |
 
 ## 6. Complexity cheat sheet
 
 The table below focuses on the dominant sequence terms and omits constants.
 
-| Family                  | Prefill complexity                                  | Decode-side intuition                               | Main memory pressure                    |
-|-------------------------|-----------------------------------------------------|-----------------------------------------------------|-----------------------------------------|
-| CLIP or SigLIP          | $O(N_v^2 d) + O(N_t^2 d)$                           | usually no autoregressive decode                    | encoder activations or embedding index  |
-| Flamingo                | $O(N_v^2 d) + O(q N_v d) + O(N_t q d)$              | per generated token still attends to visual memory  | LM KV cache plus visual memory          |
-| LLaVA-style             | $O(N_v^2 d_v) + O((N_v+N_t)^2 d)$                   | decode cost grows with retained multimodal prefix   | large decoder KV cache                  |
-| BLIP-2-style            | $O(N_v^2 d_v) + O(q N_v d) + O((q+N_t)^2 d)$        | shorter multimodal prefix than projector-only       | smaller decoder context, bridge states  |
-| Pix2Struct or PaLI-type | $O((N_v+N_t)^2 d) + O(N_y(N_v+N_t)d + N_y^2 d)$     | encoder-decoder generation                          | encoder memory plus decoder cache       |
+| Family                  | Prefill complexity                              | Decode-side intuition                              | Main memory pressure                   |
+|-------------------------|-------------------------------------------------|----------------------------------------------------|----------------------------------------|
+| CLIP or SigLIP          | $O(N_v^2 d) + O(N_t^2 d)$                       | usually no autoregressive decode                   | encoder activations or embedding index |
+| Flamingo                | $O(N_v^2 d) + O(q N_v d) + O(N_t q d)$          | per generated token still attends to visual memory | LM KV cache plus visual memory         |
+| LLaVA-style             | $O(N_v^2 d_v) + O((N_v+N_t)^2 d)$               | decode cost grows with retained multimodal prefix  | large decoder KV cache                 |
+| BLIP-2-style            | $O(N_v^2 d_v) + O(q N_v d) + O((q+N_t)^2 d)$    | shorter multimodal prefix than projector-only      | smaller decoder context, bridge states |
+| Pix2Struct or PaLI-type | $O((N_v+N_t)^2 d) + O(N_y(N_v+N_t)d + N_y^2 d)$ | encoder-decoder generation                         | encoder memory plus decoder cache      |
 
 ## 7. Main failure modes
 

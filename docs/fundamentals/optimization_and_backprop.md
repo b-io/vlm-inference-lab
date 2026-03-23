@@ -36,7 +36,7 @@ $$
 $$
 
 It points in the direction of steepest increase of the loss. Gradient descent therefore moves in the negative gradient
- direction.
+direction.
 
 If a vector-valued function $y=f(x)$ maps $\mathbb{R}^m \to \mathbb{R}^n$, its derivative is the Jacobian
 

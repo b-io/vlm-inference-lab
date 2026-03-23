@@ -1,6 +1,7 @@
 # Profiling and Optimization Workflow
 
-This note combines profiling foundations with a concrete optimization case study so the measurement workflow and the resulting performance gains can be understood together.
+This note combines profiling foundations with a concrete optimization case study so the measurement workflow and the
+resulting performance gains can be understood together.
 
 ## Profiling Foundations: Measure Before You Optimize
 

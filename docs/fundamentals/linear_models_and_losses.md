@@ -96,7 +96,7 @@ Why regularize:
 | Loss                 | Formula                                                | Typical use                  | Why                                                        |
 |----------------------|--------------------------------------------------------|------------------------------|------------------------------------------------------------|
 | MSE                  | $\frac{1}{n}\sum_i (\hat y_i-y_i)^2$                   | Regression                   | Penalizes large errors strongly; convenient derivatives    |
-| MAE                  | $\frac{1}{n}\sum_i \lvert \hat y_i-y_i \rvert$    | Regression                   | More robust to outliers than MSE                          |
+| MAE                  | $\frac{1}{n}\sum_i \lvert \hat y_i-y_i \rvert$         | Regression                   | More robust to outliers than MSE                           |
 | Binary cross-entropy | $-\frac{1}{n}\sum_i [y_i\log p_i +(1-y_i)\log(1-p_i)]$ | Binary classification        | Proper probabilistic objective for Bernoulli targets       |
 | Cross-entropy        | $-\sum_k y_k\log p_k$                                  | Multiclass classification    | Works with softmax probabilities                           |
 | Hinge loss           | $\max(0,1-yf(x))$                                      | SVM-style margin classifiers | Focuses on decision margin rather than probability fitting |

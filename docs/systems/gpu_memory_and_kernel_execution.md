@@ -1,6 +1,7 @@
 # GPU Memory and Kernel Execution
 
-This note combines the core CUDA memory hierarchy concepts with the execution model needed to reason about kernel performance on modern GPUs.
+This note combines the core CUDA memory hierarchy concepts with the execution model needed to reason about kernel
+performance on modern GPUs.
 
 ## CUDA Memory Model
 
