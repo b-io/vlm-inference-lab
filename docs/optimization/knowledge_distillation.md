@@ -43,13 +43,13 @@ $$
 
 +
 
-(1-\alpha) T^2 \, \operatorname{KL}\!\left(p^{(t)}(T) \;\|\; p^{(s)}(T)\right).
+(1-\alpha) T^2 \, \mathrm{KL}\!\left(p^{(t)}(T) \;\|\; p^{(s)}(T)\right).
 $$
 
 For classification,
 
 $$
-\mathcal{L}_{\mathrm{task}} = \operatorname{CE}\!\left(y, p^{(s)}(1)\right).
+\mathcal{L}_{\mathrm{task}} = \mathrm{CE}\!\left(y, p^{(s)}(1)\right).
 $$
 
 The factor $T^2$ compensates for gradient rescaling under temperature smoothing.
@@ -59,7 +59,7 @@ The factor $T^2$ compensates for gradient rescaling under temperature smoothing.
 At $T=1$, the softmax may be too sharp. Larger $T$ reveals richer probability structure:
 
 $$
-\operatorname{softmax}_T(z)_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}.
+\mathrm{softmax}_T(z)_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}.
 $$
 
 - large $T$ gives smoother targets
@@ -103,13 +103,13 @@ $$
 The KL term is
 
 $$
-\operatorname{KL}(t \| s) = \sum_i t_i \ln\!\left(\frac{t_i}{s_i}\right).
+\mathrm{KL}(t \| s) = \sum_i t_i \ln\!\left(\frac{t_i}{s_i}\right).
 $$
 
 Numerically,
 
 $$
-\operatorname{KL}(t \| s)
+\mathrm{KL}(t \| s)
 \approx
 0.8668\ln\!\left(\frac{0.8668}{0.8236}\right)
 
@@ -126,7 +126,7 @@ $$
 If the correct class is the first class, then the label-based cross-entropy term in the same toy example is
 
 $$
-\operatorname{CE}(y, s) = -\ln(0.8236) \approx 0.1941.
+\mathrm{CE}(y, s) = -\ln(0.8236) \approx 0.1941.
 $$
 
 Using $\alpha = 0.5$ and $T = 5$:
@@ -146,7 +146,7 @@ makes the role of the two terms explicit.
 Let
 
 $$
-q_i(T) = \operatorname{softmax}(z_i / T),
+q_i(T) = \mathrm{softmax}(z_i / T),
 $$
 
 and consider a KL term between softened teacher and student distributions. Because the logits are divided by $T$, the

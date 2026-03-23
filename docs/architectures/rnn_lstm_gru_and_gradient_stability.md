@@ -41,7 +41,7 @@ For a vanilla RNN,
 $$
 \frac{\partial h_t}{\partial h_{t-1}}
 =
-\operatorname{diag}\big(\phi'(a_t)\big) W_{hh}.
+\mathrm{diag}\big(\phi'(a_t)\big) W_{hh}.
 $$
 
 Therefore,
@@ -51,7 +51,7 @@ $$
 \lesssim
 \left\|\frac{\partial \mathcal{L}}{\partial h_T}\right\|
 \prod_{t=k+1}^{T}
-\big\|\operatorname{diag}(\phi'(a_t)) W_{hh}\big\|.
+\big\|\mathrm{diag}(\phi'(a_t)) W_{hh}\big\|.
 $$
 
 If the typical spectral norm of these factors is below $1$, the gradient shrinks exponentially: **vanishing gradient**.
@@ -100,9 +100,9 @@ contributes to vanishing gradients.
 ReLU avoids positive-side saturation:
 
 $$
-\operatorname{ReLU}(z) = \max(0,z),
+\mathrm{ReLU}(z) = \max(0,z),
 \qquad
-\operatorname{ReLU}'(z) \in \{0,1\}.
+\mathrm{ReLU}'(z) \in \{0,1\}.
 $$
 
 This can help with vanishing in some feed-forward settings, but recurrent ReLU networks can still be unstable because
@@ -254,7 +254,7 @@ which creates a shorter and more controlled gradient path than a vanilla RNN.
 Normalize intermediate activations within a time step:
 
 $$
-\operatorname{LN}(a) = \gamma \frac{a - \mu}{\sqrt{\sigma^2 + \epsilon}} + \beta.
+\mathrm{LN}(a) = \gamma \frac{a - \mu}{\sqrt{\sigma^2 + \epsilon}} + \beta.
 $$
 
 This stabilizes activation scale and often makes optimization smoother.
