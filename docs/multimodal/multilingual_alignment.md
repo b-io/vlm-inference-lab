@@ -6,9 +6,7 @@ Multilingual alignment is the problem of making a VLM preserve semantic correspo
 - captions in multiple languages
 - prompts and answers in different languages
 - cross-lingual retrieval and reasoning tasks
-
-This matters for the Microsoft role because the job description explicitly mentions multilingual compatibility and broad
-European-market coverage.
+- OCR and document content written in different scripts
 
 ## 1. Core goal
 
@@ -21,7 +19,7 @@ $$
 
 ## 2. Symmetric contrastive alignment
 
-A natural starting point is contrastive learning over image–text pairs:
+A natural starting point is contrastive learning over image-text pairs:
 
 $$
 \mathcal{L}_{\text{img}\to\text{text}} = -\sum_i \log
@@ -63,7 +61,34 @@ flowchart TD
     G --> I["Cross-lingual consistency loss"]
 ```
 
-## 4. Why multilingual alignment is hard
+## 4. Where multilingual alignment appears in different VLM families
+
+### Dual encoders
+
+In **CLIP**- or **SigLIP**-style models, multilingual alignment mainly means learning a shared image-text space that
+works across languages.
+
+### Fusion encoders
+
+In **VisualBERT**, **UNITER**, **ViLT**, **ViLBERT**, or **LXMERT** style models, alignment also means that token-level
+interaction remains semantically consistent across languages.
+
+### Grounding-native models
+
+For **MDETR**- or **GLIP-style** systems, the model must preserve phrase-to-region grounding across languages, not just
+sentence-level similarity.
+
+### Generative multimodal models
+
+For **Flamingo**, **BLIP-2**, **LLaVA**, **PaLI**, or **Pix2Struct-style** systems, multilingual alignment also affects
+answer quality, OCR robustness, and instruction following.
+
+### Document models
+
+For **LayoutLM**, **Donut**, and document-oriented **Pix2Struct-style** models, multilingual alignment must preserve
+layout semantics under different scripts, reading orders, and OCR conditions.
+
+## 5. Why multilingual alignment is hard
 
 It is not only a translation problem. The model must preserve:
 
@@ -73,16 +98,17 @@ It is not only a translation problem. The model must preserve:
 - language-specific scripts and morphology
 - cross-lingual grounding consistency
 
-A model may be fluent in many languages but still poorly aligned visually in some of them.
+A model may be fluent in many languages but still be poorly aligned visually in some of them.
 
-## 5. Multilingual document understanding
+## 6. Multilingual document understanding
 
 For document tasks, multilingual alignment also includes:
 
 - reading order in different scripts
-- date / number / currency formats
+- date, number, and currency formats
 - multilingual tables and mixed-language pages
 - OCR noise that differs by script
+- field names that are translated but occupy different layouts
 
 This can be framed as a joint objective:
 
@@ -92,13 +118,14 @@ $$
 \lambda_3 \mathcal{L}_{\text{task}}.
 $$
 
-## 6. Evaluation
+## 7. Evaluation
 
 Typical evaluation families include:
 
 - cross-lingual image-text retrieval
 - multilingual VQA
 - multilingual document extraction
+- multilingual grounding
 - zero-shot transfer from one language to another
 
 For retrieval, Recall@K is common:
@@ -107,20 +134,20 @@ $$
 \mathrm{Recall@K} = \frac{1}{N}\sum_{i=1}^{N} \mathbf{1}(\text{correct match appears in top-}K).
 $$
 
-For classification or extraction you may also track F1, exact match, or task-specific structured accuracy.
+For classification or extraction one may also track F1, exact match, or task-specific structured accuracy.
 
-## 7. Failure modes to mention
+## 8. Failure modes to watch
 
 - the image aligns strongly with English captions but weakly with other languages
 - translation-equivalent queries retrieve different visual concepts
 - OCR-heavy scripts degrade much more than Latin-script inputs
 - multilingual answers are fluent but semantically inconsistent with the image
+- grounding quality drops across languages even when answer fluency remains high
 
 ## Practical summary
 
 A concise summary is:
 
 > Multilingual alignment means more than translating prompts. The model has to preserve the same visual semantics across
-> languages, which I would usually enforce with contrastive image–text alignment plus some form of cross-lingual
-> consistency. For enterprise or European-market settings, I would pay extra attention to document layouts, OCR noise,
-> and script-specific failure modes, because those often break first.
+> languages. Depending on the architecture, that may mean shared retrieval embeddings, token-level fusion consistency,
+> phrase-to-region grounding, or OCR-plus-layout robustness across scripts and document formats.

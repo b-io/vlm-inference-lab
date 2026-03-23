@@ -233,10 +233,11 @@ It is not the first choice for:
 - simple OCR replacement when a classical OCR system already works very well
 - extremely long multi-page context without additional orchestration
 
-## 9. VLM plus LLM document reasoners
+## 9. Bridge-to-LLM document reasoners
 
 Another pattern is to use a high-resolution vision encoder or visual tokenizer, then hand compressed visual tokens to a
-large language model.
+large language model. This family includes projector-based systems, query-bridge systems, and other multimodal LLM
+architectures adapted to document inputs.
 
 A generic abstraction is
 
@@ -342,6 +343,6 @@ A good document system is not judged by text fluency alone.
 ## 14. Practical summary
 
 > Document understanding is harder than plain NLP because semantics depends on text, layout, and image evidence
-> jointly. I would think in terms of OCR-based pipelines, layout-aware encoders, OCR-free encoder-decoders such as
-> Donut and Pix2Struct, and projector-plus-LLM systems. The right choice depends on whether the main requirement is
-> exact extraction fidelity, flexible reasoning, or enterprise interpretability.
+> jointly. A useful taxonomy includes OCR-based pipelines, layout-aware encoders such as LayoutLM, OCR-free
+> encoder-decoders such as Donut and Pix2Struct, and bridge-to-LLM document reasoners. The right choice depends on
+> whether the main requirement is exact extraction fidelity, flexible reasoning, or interpretability.

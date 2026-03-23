@@ -58,7 +58,7 @@ This path is intentional: read [decision trees](fundamentals/decision_trees.md) 
 
 ### Path 4: Vision-language modeling
 
-1. [Embeddings and CLIP-style alignment](multimodal/embeddings.md)
+1. [Embeddings and cross-modal alignment](multimodal/embeddings.md)
 2. [VLM architectures and basics](multimodal/vlm_architectures_and_basics.md)
 3. [Document understanding](multimodal/document_understanding.md)
 4. [Referring expression comprehension](multimodal/referring_expression_comprehension.md)
@@ -113,11 +113,14 @@ This path is intentional: read [decision trees](fundamentals/decision_trees.md) 
 
 ### Multimodal
 
-- [Embeddings and CLIP-style alignment](multimodal/embeddings.md)
+- [Embeddings and cross-modal alignment](multimodal/embeddings.md)
 - [VLM architectures and basics](multimodal/vlm_architectures_and_basics.md)
 - [Document understanding](multimodal/document_understanding.md)
 - [Multilingual alignment](multimodal/multilingual_alignment.md)
 - [Referring expression comprehension](multimodal/referring_expression_comprehension.md)
+
+These notes cover retrieval models, fusion encoders, grounding-native models, document-specialized VLMs, and
+bridge-to-LLM multimodal systems.
 
 ### Serving
 

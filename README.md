@@ -27,8 +27,10 @@ hardware execution.
   [Transformer tokenization and decoding](docs/transformers/transformers_tokenization_and_decoding.md),
   [position embeddings](docs/transformers/position_embeddings_and_positional_encoding.md),
   [multimodal embeddings](docs/multimodal/embeddings.md),
-  [VLM architectures](docs/multimodal/vlm_architectures_and_basics.md), and
-  [document understanding](docs/multimodal/document_understanding.md).
+  [VLM architectures](docs/multimodal/vlm_architectures_and_basics.md),
+  [document understanding](docs/multimodal/document_understanding.md),
+  [multilingual alignment](docs/multimodal/multilingual_alignment.md), and
+  [referring expression comprehension](docs/multimodal/referring_expression_comprehension.md).
 - **Hardware Portability**:
   Reasoning about [NVIDIA (CUDA) vs. AMD (HIP/ROCm)](docs/systems/cuda_vs_hip.md) serving.
 - **Documentation Backbone**:
@@ -155,15 +157,15 @@ To compile and run manually:
 
 ```powershell
 nvcc resources/vlm_inference_lab/cuda/reduction.cu -o reduction.exe
-.
-eduction.exe
+.\reduction.exe
 ```
 
 ## Status
 
 - ✅ **Structured Benchmarking**: Automated Python-CUDA integration via `CudaRunner`.
 - ✅ **System Modeling**: Arrival and batching simulation with robust P-metric reporting.
-- ✅ **Technical Docs**: Organized notes on architectures, serving, systems, optimization, and multimodal modeling.
+- ✅ **Technical Docs**: Organized notes on architectures, serving, systems, optimization, and multimodal modeling,
+  including retrieval, fusion encoders, grounding, document understanding, and multimodal assistants.
 - ✅ **Remote Orchestration**: Production-ready Runpod/vLLM benchmark wrappers.
 - ✅ **Reference Docs**:
     - [Documentation map](docs/README.md)
@@ -172,4 +174,6 @@ eduction.exe
     - [RNN gradient stability](docs/architectures/rnn_lstm_gru_and_gradient_stability.md)
     - [VLM architectures](docs/multimodal/vlm_architectures_and_basics.md)
     - [Document understanding](docs/multimodal/document_understanding.md)
+    - [Multilingual alignment](docs/multimodal/multilingual_alignment.md)
+    - [Referring expression comprehension](docs/multimodal/referring_expression_comprehension.md)
     - [Serving optimizations](docs/serving/advanced_serving_features.md)

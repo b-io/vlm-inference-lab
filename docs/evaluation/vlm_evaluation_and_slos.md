@@ -1,15 +1,15 @@
 # VLM Evaluation, Custom Evaluation Sets, and SLO-Aware Benchmarking
 
-A senior VLM-serving role is not only about running benchmarks. It is about connecting:
+Benchmarking a VLM is not only about reporting a single score. It is about connecting:
 
 - model quality
 - grounding quality
 - document/task realism
-- latency / throughput / cost under service constraints
+- latency, throughput, and cost under service constraints
 
 ## 1. Why custom evaluation sets matter
 
-Generic public benchmarks are useful, but product quality depends on the distribution you actually care about.
+Generic public benchmarks are useful, but product quality depends on the distribution that actually matters.
 
 For a serious production workflow, the evaluation set should reflect:
 
@@ -51,7 +51,17 @@ flowchart TD
     E --> F
 ```
 
-## 3. Task-quality metrics by problem family
+## 3. Align metrics to the model family
+
+Different VLM families need different primary metrics:
+
+- **dual encoders**: Recall@K, ranking quality, zero-shot accuracy
+- **fusion encoders**: classification, entailment, VQA accuracy
+- **grounding-native models**: IoU-thresholded accuracy, box AP, phrase-region accuracy
+- **document models**: exact match, normalized edit distance, field F1, table structure metrics
+- **generative multimodal models**: answer accuracy, groundedness, hallucination rate, citation or evidence quality
+
+## 4. Task-quality metrics by problem family
 
 ### Retrieval
 
@@ -97,7 +107,7 @@ $$
 \mathrm{NED}(x, y) = \frac{\mathrm{EditDistance}(x, y)}{\max(|x|, |y|)}.
 $$
 
-## 4. Service metrics
+## 5. Service metrics
 
 A deployment decision should also include:
 
@@ -111,7 +121,7 @@ A deployment decision should also include:
 - memory usage
 - cost per request or per generated token
 
-## 5. SLO-aware evaluation
+## 6. SLO-aware evaluation
 
 A useful operational metric is **goodput**, not raw throughput.
 
@@ -122,14 +132,14 @@ $$
 \mathrm{goodput} = \lambda p_{\text{SLO}}.
 $$
 
-You can make this stricter by requiring both service and quality constraints:
+One can make this stricter by requiring both service and quality constraints:
 
 $$
 \mathrm{goodput}_{\text{qualified}} = \lambda \cdot
 \Pr(\mathrm{latency} \le L_{\max},\ \mathrm{quality} \ge Q_{\min}).
 $$
 
-## 6. Pareto selection
+## 7. Pareto selection
 
 Each configuration $c$ has a vector of outcomes such as:
 
@@ -137,8 +147,8 @@ $$
 \phi(c) = (\mathrm{TTFT}(c), \mathrm{TPOT}(c), \mathrm{throughput}(c), \mathrm{quality}(c)).
 $$
 
-A configuration is useful only if it is not clearly dominated by another one for the objectives you care about. This is
-the operational use of a Pareto frontier.
+A configuration is useful only if it is not clearly dominated by another one for the objectives that matter. This is the
+operational use of a Pareto frontier.
 
 ## Diagram: benchmark and selection loop
 
@@ -152,7 +162,7 @@ flowchart LR
     E --> F["Pareto / release decision"]
 ```
 
-## 7. Why this matters for documents and VLMs
+## 8. Why this matters for documents and VLMs
 
 Document VLMs often fail in ways aggregate benchmarks hide:
 
@@ -161,11 +171,13 @@ Document VLMs often fail in ways aggregate benchmarks hide:
 - multilingual slices may fail earlier than English slices
 - tail latency may spike on large pages even when median latency looks fine
 
-## 8. Practical summary
+The same issue appears in grounding tasks: an answer can look plausible while the box, mask, or evidence span is wrong.
+
+## 9. Practical summary
 
 A concise summary is:
 
-> I would not rely on one global benchmark number. I would build slice-based evaluation sets around the product
-> distribution, track both task-quality and service metrics, and then evaluate goodput under explicit SLOs. For
-> multimodal systems, especially document understanding, I want to know not only whether the model is fluent, but
-> whether it grounds correctly, extracts the right fields, and still meets latency targets on the hard slices.
+> It is rarely enough to rely on one global benchmark number. Slice-based evaluation should reflect the actual task
+> distribution, and both task-quality and service metrics should be tracked. For multimodal systems, especially
+> grounding- and document-heavy ones, the key question is not only whether the model is fluent, but whether it grounds
+> correctly, extracts the right fields, and still meets latency targets on the hard slices.
