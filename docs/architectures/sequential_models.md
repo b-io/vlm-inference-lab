@@ -15,7 +15,7 @@ budget.
 - **Sequence labeling**: predict one label per position
 - **Language modeling**:
   $$
-  p(x_1,\dots,x_T)=\prod_{t=1}^T p(x_t\mid x_{<t})
+  p(x_1,\dots,x_T)=\prod_{t=1}^T p(x_t\mid x_{\lt t})
   $$
 - **Sequence-to-sequence modeling**: map an input sequence to an output sequence
 

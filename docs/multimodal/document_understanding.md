@@ -13,6 +13,7 @@ A document is not just plain text. It contains:
 - key-value structure
 - stamps, signatures, logos, checkboxes
 - multi-column or nested structure
+- page-to-page dependencies
 
 A document model therefore needs more than OCR. It needs grounding between content and layout.
 
@@ -26,22 +27,36 @@ A document model therefore needs more than OCR. It needs grounding between conte
 - **classification**: classify page or document type
 - **entity grounding**: point to where the answer came from
 
-## 3. Main architecture families
+## 3. Notation for cost models
+
+I will use:
+
+- page image size: $H \times W$
+- patch size: $P \times P$
+- visual token count: $N_v = \frac{H}{P}\frac{W}{P}$
+- OCR token count: $N_{\text{ocr}}$
+- output length: $N_y$
+- hidden width: $d$
+
+The biggest operational challenge is that documents push both **resolution** and **text density** upward at the same
+time.
+
+## 4. Architecture map
 
 ```mermaid
 flowchart TD
-    A[Document image / PDF] --> B[OCR + NLP pipeline]
+    A[Document image or PDF page] --> B[OCR plus NLP pipeline]
     A --> C[Layout-aware multimodal encoder]
     A --> D[OCR-free encoder-decoder]
-    A --> E[VLM visual encoder + LLM]
+    A --> E[VLM vision encoder plus LLM]
 
-    B --> B1[text + boxes]
+    B --> B1[Text and boxes]
     C --> C1[LayoutLM-like]
-    D --> D1[Donut / Pix2Struct-like]
-    E --> E1[projector + LLM reasoning]
+    D --> D1[Donut or Pix2Struct-like]
+    E --> E1[Projector or bridge plus LLM reasoning]
 ```
 
-### 3.1 OCR + NLP pipeline
+## 5. OCR plus NLP pipelines
 
 Pipeline:
 
@@ -50,37 +65,225 @@ Pipeline:
 3. recover reading order and table structure
 4. pass structured text to downstream models
 
-**Strength**: modular and interpretable.
+### Why this family remains important
 
-**Weakness**: OCR errors propagate downstream.
+It is modular, interpretable, and controllable. In many enterprise settings, that matters more than having a single
+end-to-end model.
 
-### 3.2 Layout-aware encoders
+### Cost intuition
 
-These combine text, bounding boxes, and sometimes image features. A token embedding may look like:
+If OCR detection and recognition cost $C_{\text{ocr}}$ and the downstream NLP model sees $N_{\text{ocr}}$ tokens, the
+rough pipeline cost is
+
+$$
+O(C_{\text{ocr}}) + O(N_{\text{ocr}}^2 d)
+$$
+
+for a Transformer-style downstream model.
+
+### When to use
+
+Use an OCR pipeline when:
+
+- exact extracted text matters
+- auditability matters
+- you need modular control over OCR, parsing, and business rules
+- multi-language OCR is already strong in your stack
+
+### When not to use
+
+Avoid it when OCR is unreliable for the script, the layout is highly visual, or you want end-to-end generation with
+minimal pipeline glue.
+
+## 6. Layout-aware multimodal encoders: LayoutLM-style thinking
+
+Layout-aware models combine text, bounding boxes, and sometimes image patches.
+A token embedding may look like:
 
 $$
 e_i = e_i^{\text{text}} + e_i^{\text{2D-pos}} + e_i^{\text{visual}}.
 $$
 
-This explicitly incorporates both content and location.
+A layout-biased attention layer can be written abstractly as
 
-### 3.3 OCR-free encoder-decoder models
+$$
+\operatorname{Attention}(Q,K,V)=\operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d}} + B_{\text{layout}}\right)V,
+$$
 
-Models like Donut or Pix2Struct-style systems treat the document image as input and generate structured output directly.
+where $B_{\text{layout}}$ biases attention using relative spatial geometry.
 
-**Strength**: end-to-end training.
+### LayoutLMv3 mental model
 
-**Weakness**: harder to debug and sometimes data hungry.
+LayoutLMv3 unifies text masking and image masking and also uses word-patch alignment. So it is a strong default mental
+model for **text plus layout plus image** document encoding.
 
-### 3.4 VLM projector + LLM
+### Complexity
 
-A high-resolution vision encoder produces visual tokens or features, which are projected into an LLM token space.
+If the model uses OCR tokens and image patches jointly, a rough full-attention cost is
 
-**Strength**: flexible reasoning and instruction following.
+$$
+O\!\left((N_{\text{ocr}} + N_v)^2 d\right).
+$$
 
-**Weakness**: expensive serving due to high visual token counts and long textual outputs.
+In practice, OCR-heavy documents can make $N_{\text{ocr}}$ very large even before the image-patch side becomes a
+problem.
 
-## 4. Why document understanding is hard for VLMs
+### When to use
+
+Use a LayoutLM-style model when:
+
+- OCR is available and reasonably good
+- forms, receipts, invoices, and key-value extraction matter
+- spatial structure is as important as the text itself
+
+### When not to use
+
+Avoid it when you do not want OCR dependency or when the task is better framed as free-form generation rather than
+structured encoding.
+
+## 7. Donut: OCR-free encoder-decoder for documents
+
+Donut is an OCR-free document understanding Transformer. The core idea is to encode the page image directly and decode a
+textual or structured output.
+
+A generic formulation is
+
+$$
+p(y_{1:N_y} \mid x_{\text{page}})
+= \prod_{t=1}^{N_y} p\!\left(y_t \mid y_{\lt t}, E(x_{\text{page}})\right),
+$$
+
+where $E(\cdot)$ is the visual encoder memory.
+
+```mermaid
+flowchart LR
+    P[Page image] --> VE[Visual encoder]
+    VE --> MEM[Visual memory]
+    MEM --> DEC[Autoregressive decoder]
+    DEC --> OUT[JSON, fields, or answer text]
+```
+
+### Complexity
+
+If the visual encoder uses $N_v$ page tokens and the decoder emits $N_y$ output tokens, a rough cost model is
+
+$$
+O(N_v^2 d) + O(N_y^2 d) + O(N_y N_v d).
+$$
+
+That is encoder self-attention, decoder self-attention, and decoder-to-encoder cross-attention.
+
+### When to use
+
+Use Donut-style models when:
+
+- you want an OCR-free pipeline
+- outputs are naturally JSON-like, field-like, or textual
+- you can fine-tune on a relatively specific document distribution
+
+### When not to use
+
+Be careful when:
+
+- text is tiny and page resolution must be very high
+- exact character fidelity matters more than end-to-end elegance
+- the document distribution is extremely broad and noisy
+
+## 8. Pix2Struct: screenshot and visually situated language generation
+
+Pix2Struct is also encoder-decoder generative, but it is especially useful to think of it as a model for **visually
+situated language**, including screenshots, UIs, charts, and documents.
+
+A useful abstraction is again
+
+$$
+p(y_{1:N_y} \mid x_{\text{image}}, x_{\text{prompt}})
+= \prod_{t=1}^{N_y} p\!\left(y_t \mid y_{\lt t}, E(x_{\text{image}}, x_{\text{prompt}})\right).
+$$
+
+### Why it matters for documents
+
+It is a strong fit when the page or screenshot contains mixed text, layout, icons, charts, tables, and structural cues
+that are all useful for the answer.
+
+### Complexity
+
+If the encoder processes $N_v$ visual tokens and possibly prompt tokens too, the rough cost remains
+
+$$
+O(N_v^2 d) + O(N_y^2 d) + O(N_y N_v d).
+$$
+
+Its main practical advantage is not a fundamentally different asymptotic formula, but that its pretraining and input
+representation are designed for visually situated tasks.
+
+### When to use
+
+Use Pix2Struct-style models when:
+
+- the input is a screenshot, UI, chart, or visually structured page
+- the answer is naturally text generation
+- you want one model family that covers several visually situated tasks
+
+### When not to use
+
+It is not the first choice for:
+
+- large-scale embedding retrieval
+- simple OCR replacement when a classical OCR system already works very well
+- extremely long multi-page context without additional orchestration
+
+## 9. VLM plus LLM document reasoners
+
+Another pattern is to use a high-resolution vision encoder or visual tokenizer, then hand compressed visual tokens to a
+large language model.
+
+A generic abstraction is
+
+$$
+Z_v = P(V),
+$$
+
+where $V$ are dense visual features and $P$ is a projector or query bridge. The LLM then reasons over text plus
+compressed visual tokens.
+
+### Complexity
+
+If the document image produces $N_v$ tokens and the bridge compresses them to $q$ tokens, then the language-side
+multimodal prefix length is closer to $q + N_t$ than to $N_v + N_t$.
+
+A rough cost model is therefore
+
+$$
+O(N_v^2 d_v) + O(q N_v d) + O((q+N_t)^2 d)
+$$
+
+for vision encoding, compression, and LLM prefill.
+
+### When to use
+
+Use this family when:
+
+- you need flexible question answering over pages
+- instruction following matters
+- the document may contain mixed visual and textual evidence
+
+### When not to use
+
+It is not the best default when you need strict field extraction, exact provenance, or predictable latency under very
+high page counts.
+
+## 10. Comparison of major document families
+
+| Family                   | Best strength                             | Main weakness                                 | Best when                                      |
+|--------------------------|-------------------------------------------|-----------------------------------------------|------------------------------------------------|
+| OCR plus NLP             | interpretable, modular, controllable      | OCR error propagation                         | enterprise extraction pipelines                |
+| Layout-aware encoder     | strong text-layout fusion                 | depends on OCR and token quality              | forms, invoices, receipts, structured docs     |
+| Donut-style OCR-free     | end-to-end structured generation          | high-resolution tiny text remains hard        | specialized document extraction                |
+| Pix2Struct-style         | strong for visually situated generation   | not retrieval-first, still resolution-heavy   | screenshots, UIs, charts, mixed documents      |
+| VLM plus LLM             | flexible reasoning and instruction        | expensive and can hallucinate grounding       | open-ended QA over visually complex documents  |
+
+## 11. Why document understanding is hard for VLMs
 
 ### Small text and high resolution
 
@@ -103,44 +306,16 @@ The model must both **perceive** and **reason**:
 - align regions with semantics
 - answer correctly with source fidelity
 
-## 5. Spatial grounding mathematics
-
-Suppose token $i$ has text embedding $t_i$ and bounding box $b_i=(x_{1i}, y_{1i}, x_{2i}, y_{2i})$. A layout-aware
-encoder often uses:
-
-$$
-h_i^{(0)} = t_i + p(b_i) + v_i,
-$$
-
-where $p(b_i)$ is a learned 2D positional embedding and $v_i$ is an optional visual-region embedding.
-
-Attention can then mix tokens by both content and position:
-
-$$
-\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d}} + B_{\text{layout}}\right)V,
-$$
-
-where $B_{\text{layout}}$ biases attention using relative spatial geometry.
-
-## 6. Architecture tradeoffs
-
-| Family                   | Best strength                             | Main weakness                                 | Best when                            |
-|--------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------------|
-| OCR + NLP                | Interpretable, modular, controllable      | OCR error propagation                         | Enterprise extraction pipelines      |
-| Layout-aware encoder     | Strong text-layout fusion                 | Needs good OCR/text tokens                    | Forms, invoices, structured docs     |
-| OCR-free encoder-decoder | End-to-end structured generation          | Harder to debug and scale                     | Clean specialized extraction tasks   |
-| VLM + LLM                | Flexible reasoning, instruction following | Expensive and prone to hallucinated grounding | Complex question answering over docs |
-
-## 7. Evaluation metrics
+## 12. Evaluation metrics
 
 A good document system is not judged by text fluency alone.
 
 ### Extraction metrics
 
-- exact match / field accuracy
+- exact match or field accuracy
 - normalized edit distance
 - table structure accuracy
-- token- or entity-level F1
+- token-level or entity-level F1
 
 ### Grounding metrics
 
@@ -155,18 +330,18 @@ A good document system is not judged by text fluency alone.
 - throughput
 - failure rate under high-resolution and multi-page inputs
 
-## 8. Failure modes
+## 13. Failure modes
 
 - reading-order mistakes
 - OCR corruption
-- table row/column confusion
+- table row and column confusion
 - answers that are fluent but not grounded in the page
 - multi-page leakage or context truncation
 - poor multilingual performance on mixed-language documents
 
-## 9. Practical summary
+## 14. Practical summary
 
-> Document understanding is harder than plain NLP because semantics depends on text, layout, and image evidence jointly.
-> I would think in terms of OCR-based pipelines, layout-aware encoders, OCR-free models, and projector-plus-LLM systems.
-> The right choice depends on whether I need strict extraction fidelity, flexible reasoning, or enterprise
-> interpretability.
+> Document understanding is harder than plain NLP because semantics depends on text, layout, and image evidence
+> jointly. I would think in terms of OCR-based pipelines, layout-aware encoders, OCR-free encoder-decoders such as
+> Donut and Pix2Struct, and projector-plus-LLM systems. The right choice depends on whether the main requirement is
+> exact extraction fidelity, flexible reasoning, or enterprise interpretability.

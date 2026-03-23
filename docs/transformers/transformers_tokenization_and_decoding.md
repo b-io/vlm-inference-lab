@@ -83,7 +83,7 @@ matching or special token handling.
 
 At generation step $t$, the model defines a probability mass function over the vocabulary:
 $$
-p(x_t \mid x_{<t}).
+p(x_t \mid x_{\lt t}).
 $$
 
 ### Greedy decoding

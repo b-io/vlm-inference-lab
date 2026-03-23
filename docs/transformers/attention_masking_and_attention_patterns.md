@@ -150,7 +150,7 @@ flowchart TD
 For autoregressive modeling, the training objective is
 
 $$
-\log p(x_1,\dots,x_T)=\sum_{t=1}^T \log p(x_t\mid x_{<t}).
+\log p(x_1,\dots,x_T)=\sum_{t=1}^T \log p(x_t\mid x_{\lt t}).
 $$
 
 Without causal masking, the model could leak future tokens into the hidden state and artificially solve the prediction

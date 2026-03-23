@@ -1,75 +1,65 @@
 # VLM Architectures and Basics
 
-This note consolidates the high-level introduction to vision-language models and the main architecture families used in retrieval, grounding, multimodal reasoning, and generation.
+This note consolidates the main architecture families used in retrieval, grounding, multimodal reasoning, and
+multimodal generation.
 
-## Vision-Language Models (VLMs)
+## 1. What a VLM has to do
 
-A vision-language model jointly processes images and text. The goal is to align visual representations with language
-representations so the system can describe, retrieve, classify, ground, or reason over visual content using text.
+A vision-language model jointly processes images and text. The goal is not only to produce plausible language, but to
+make that language depend on actual visual evidence.
 
-### Core problem
+A VLM therefore has to solve two related problems:
 
-A VLM must solve two related problems:
+1. **Representation alignment**: image and text representations referring to the same concept should be compatible.
+2. **Cross-modal conditioning**: the text-side computation should actually use the visual input when producing an
+   answer.
 
-1. **Representation alignment**: image and text representations referring to the same concept should be close in a
-   shared space
-2. **Cross-modal conditioning**: the model should use information from one modality to guide predictions in the other
-
-Typical tasks:
+Typical tasks include:
 
 - image-text retrieval
+- zero-shot classification
 - image captioning
-- visual question answering
-- grounded conversation over images or videos
-- multimodal generation and tool use
-- document and screenshot understanding
+- VQA
+- multimodal chat
+- screenshot and document understanding
+- grounded generation over images, charts, or pages
 
-### Why VLMs are harder than text-only LLMs
+## 2. Core notation for complexity
 
-A text-only LLM only has to model **one modality**: text.
+I will use the following symbols throughout.
 
-A VLM must deal with:
+- image size: $H \times W$
+- patch size: $P \times P$
+- visual token count: $N_v = \frac{H}{P}\frac{W}{P}$ for a plain ViT-style patching scheme
+- text prompt length: $N_t$
+- generated output length: $N_y$
+- hidden width: $d$
+- number of bridge or query tokens: $q$
+- number of multimodal decoder layers: $L$
 
-- **different input statistics**: images and text have different structures and distributions
-- **different encoders**: visual features and language features are not naturally in the same space
-- **grounding**: a plausible answer is not enough; the answer must correspond to actual visual evidence
-- **serving cost**: images introduce preprocessing, visual encoding, extra tokens, and more memory pressure
+For Transformer blocks, the most important scaling terms are usually:
 
-This creates two different kinds of difficulty:
+- self-attention: $O(n^2 d)$
+- cross-attention: $O(n m d)$ for query length $n$ and memory length $m$
+- MLP: $O(n d^2)$
 
-#### Modeling difficulty
+When talking about inference, it helps to split cost into:
 
-A VLM must learn a bridge between:
+- **prefill cost**: encode the image and initial prompt
+- **decode cost**: generate new tokens autoregressively
+- **KV-cache memory**: memory that grows with retained context length
 
-- visual features derived from pixels, patches, regions, layout, or objects
-- language features derived from tokens, syntax, and semantics
+## 3. Main architecture families
 
-These are not automatically comparable. The model needs either:
+### 3.1 Dual encoders: CLIP and SigLIP
 
-- a **shared embedding space**,
-- a **fusion mechanism**, or
-- a **projection / bridge module**.
+Dual encoders use one image encoder and one text encoder, then align them in a shared embedding space.
 
-#### Systems difficulty
-
-Serving a VLM is usually harder than serving a text-only LLM because:
-
-- there is often a **vision encoder** before the LLM decode loop
-- there may be many **visual tokens**
-- **TTFT** tends to increase
-- **KV cache pressure** can increase
-- batching and scheduling are more complicated
-
-### Main architecture patterns
-
-### 1) Dual-encoder models
-
-Use one encoder for images and one for text, then align them in a shared embedding space.
-
-A common contrastive objective is
+A standard CLIP-style contrastive objective is
 
 $$
-\mathcal{L} = -\sum_i \log \frac{\exp(s(v_i, t_i)/\tau)}{\sum_j \exp(s(v_i, t_j)/\tau)}
+\mathcal{L}_{\mathrm{clip}}
+= -\sum_i \log \frac{\exp(s(v_i, t_i)/\tau)}{\sum_j \exp(s(v_i, t_j)/\tau)}
 $$
 
 with a symmetric text-to-image term as well.
@@ -81,820 +71,424 @@ Here:
 - $s(\cdot,\cdot)$ is a similarity score, often cosine similarity
 - $\tau$ is a temperature parameter
 
-Representative models:
+A SigLIP-style pairwise sigmoid loss can be written as
 
-- CLIP
-- SigLIP
+$$
+\mathcal{L}_{\mathrm{sig}}
+= - \sum_{i,j} \log \sigma\!\left(y_{ij} s_{ij}\right),
+$$
+
+where $y_{ij}\in\{-1,+1\}$ indicates whether the image-text pair matches.
 
 ```mermaid
 flowchart LR
-    I[Image] --> IE[Image Encoder]
-    T[Text] --> TE[Text Encoder]
-    IE --> VI[Image Embedding]
-    TE --> VT[Text Embedding]
-    VI --> SIM[Similarity in Shared Space]
+    I[Image] --> IE[Image encoder]
+    T[Text] --> TE[Text encoder]
+    IE --> VI[Image embedding]
+    TE --> VT[Text embedding]
+    VI --> SIM[Similarity in shared space]
     VT --> SIM
 ```
 
-#### What this solves
+#### Intuition
 
-It learns cross-modal retrieval and zero-shot classification by making matched image-text pairs similar and mismatched
-pairs dissimilar.
+CLIP does **not** reason over image regions token by token with text. It learns that matched image-text pairs should be
+close in embedding space and mismatched pairs should be far apart.
 
-#### What CLIP is really doing
+That is why it is excellent for:
 
-CLIP trains:
-
-- an image encoder
-- a text encoder
-
-so that **matched image-text pairs** land close together in embedding space, while mismatched pairs are pushed apart.
-
-So yes, conceptually, CLIP learns that:
-
-- an image of a glass
-- and a text like "a photo of a drinking glass"
-
-should produce similar vectors.
-
-More precisely:
-
-- it does **not** just align single words to single pixels
-- it aligns **whole image semantics** with **whole text semantics**
-
-In training, a batch of image-text pairs is contrasted against itself:
-
-- the correct image-text pairs should score highly
-- the wrong pairs should score poorly
-
-#### Zero-shot classification
-
-This is one of the most important consequences of CLIP-like training.
-
-##### Intuition
-
-Instead of training a classifier head for each label, you write labels as text prompts, for example:
-
-- "a photo of a cat"
-- "a photo of a dog"
-- "a photo of a glass"
-
-Then:
-
-1. encode the image
-2. encode each text label prompt
-3. compare similarities
-4. choose the label whose text embedding is closest to the image embedding
-
-So the model performs classification **without task-specific classifier training** for that exact label set.
-
-##### Why it is called zero-shot
-
-Because the model can often classify categories it was **not explicitly trained as a classifier for**.
-
-It has seen large-scale image-text pairs and learned a shared semantic space, so at inference time you can define a new
-classification task only through prompts.
-
-##### Example
-
-Suppose the candidate labels are:
-
-- "a photo of a drinking glass"
-- "a photo of eyeglasses"
-- "a photo of a dog"
-
-Given an image of a drinking glass, the image embedding should be closest to the first text embedding.
-
-That is zero-shot classification in the CLIP sense.
-
-##### Strengths
-
-- efficient retrieval
-- clean shared embedding space
-- strong zero-shot classification when trained on large image-text corpora
-- easy to build retrieval systems and embedding search
-
-##### Weaknesses
-
-- limited fine-grained generative reasoning by itself
-- interaction between modalities is weaker than in fully fused architectures
-- prompt phrasing can matter a lot
-- ambiguity remains hard when the text label is underspecified
-
-### 2) Fusion / cross-attention models
-
-Image features and text features are allowed to interact through cross-attention or multimodal fusion layers.
-
-Representative directions:
-
-- ALBEF-style fusion
-- Flamingo-style cross-attention bridges
-
-```mermaid
-flowchart LR
-    I[Image] --> IE[Vision Encoder]
-    T[Text] --> TE[Text Encoder]
-    IE --> VF[Visual Features]
-    TE --> TF[Text Features]
-    VF --> FUSION[Cross-Attention / Fusion Layers]
-    TF --> FUSION
-    FUSION --> OUT[Task Output]
-```
-
-#### What this solves
-
-It supports tasks where the text must attend to particular regions or objects, or where fine-grained grounding matters.
-
-#### Strengths
-
-- richer multimodal interaction
-- better for VQA, grounding, and detailed reasoning
-- stronger token-level or region-level interaction than simple shared-space matching
-
-#### Weaknesses
-
-- more expensive than simple dual encoders
-- usually less retrieval-friendly than a clean shared-space model
-- more complex serving path
-
-### 3) Image encoder + projector + LLM
-
-A common modern VLM structure is:
-
-- a **vision encoder** (CNN or ViT) extracts visual tokens or features
-- a **projection layer / adapter** maps them into the language model embedding space
-- a **decoder-only LLM** consumes both text tokens and visual tokens
-
-Representative models:
-
-- LLaVA
-- many multimodal assistant-style LLMs
-
-```mermaid
-flowchart LR
-    I[Image] --> VE[Vision Encoder]
-    VE --> VT[Visual Tokens / Features]
-    VT --> P[Projector / Adapter]
-    P --> MMT[Projected Visual Tokens]
-    T[Prompt Text] --> TOK[Tokenizer]
-    TOK --> TXT[Text Tokens]
-    MMT --> LLM[Decoder-only LLM]
-    TXT --> LLM
-    LLM --> OUT[Generated Text]
-```
-
-#### What this solves
-
-It lets a pretrained language model perform multimodal generation with relatively small vision-specific adaptation.
-
-#### Why this is attractive
-
-- reuses the strong reasoning and generation abilities of large language models
-- integrates naturally with instruction tuning and conversational interfaces
-- supports captioning, VQA, and multimodal dialogue with one core model
-
-#### Main tradeoff
-
-The language model may sound coherent even when the visual grounding is weak. Good language fluency is not the same as
-faithful visual reasoning.
-
-#### Why alignment is different here than in CLIP
-
-In CLIP:
-
-- image embeddings and text embeddings are trained into a **shared comparable space**
-
-In projector + LLM systems:
-
-- the vision features are usually **not directly comparable** to language embeddings at first
-- the projector learns how to map the visual representation into the space the LLM can consume
-
-So this is not mainly about nearest-neighbor matching in a shared retrieval space. It is about
-**conditioning a generative language model on visual information**.
-
-### 4) Query-bridge architectures
-
-These models compress or query visual information before handing it to the language model.
-
-Representative models:
-
-- BLIP-2
-- Q-Former-style bridges
-
-```mermaid
-flowchart LR
-    I[Image] --> VE[Vision Encoder]
-    VE --> VF[Dense Visual Features]
-    Q[Learned Query Tokens] --> QB[Query Bridge / Q-Former]
-    VF --> QB
-    QB --> CQ[Compressed Visual Queries]
-    T[Prompt Text] --> TOK[Tokenizer]
-    TOK --> TXT[Text Tokens]
-    CQ --> LLM[Language Model]
-    TXT --> LLM
-    LLM --> OUT[Generated Text]
-```
-
-#### What this solves
-
-It allows strong frozen vision and language components to be connected efficiently, often with fewer trainable
-multimodal parameters.
-
-#### Strengths
-
-- parameter-efficient adaptation
-- lower visual-token pressure than naïvely forwarding many image features
-- practical engineering compromise
-
-#### Weaknesses
-
-- bottleneck may discard useful detail
-- architecture is less direct than a simple projector
-- can lose fine-grained information if the bridge is too compressive
-
-### 5) Unified encoder-decoder generative models
-
-These models expose a single text-generation interface over both image and text inputs.
-
-Representative models:
-
-- PaLI
-- Pix2Struct
-
-```mermaid
-flowchart LR
-    I[Image / Document] --> VE[Vision Encoder]
-    T[Text Prompt] --> TE[Text / Input Encoder]
-    VE --> ENC[Unified Encoder Representation]
-    TE --> ENC
-    ENC --> DEC[Text Decoder]
-    DEC --> OUT[Generated Text / Structured Output]
-```
-
-#### What this solves
-
-It is useful when the final product is naturally framed as image-conditioned text generation, including multilingual or
-document-heavy tasks.
-
-#### Strengths
-
-- unified generation interface
-- strong fit for multilingual and document tasks
-- natural for structured extraction and explanation
-
-#### Weaknesses
-
-- more expensive than retrieval-oriented systems
-- often not the best choice when retrieval is the core need
-- can be heavy for very large-scale interactive serving
-
-### 6) OCR-free document specialists
-
-Representative models:
-
-- Donut
-- Pix2Struct
-
-```mermaid
-flowchart LR
-    D[Document / Screenshot Image] --> VE[Document Vision Encoder]
-    VE --> DOC[Layout-aware Visual Representation]
-    DOC --> DEC[Text / Structured Decoder]
-    DEC --> OUT[Fields / JSON / Natural Language Output]
-```
-
-#### What this solves
-
-It avoids a separate OCR stage and directly predicts the desired textual or structured output from page images or
-screenshots.
-
-#### Strengths
-
-- simpler end-to-end document pipeline
-- less OCR error propagation
-- good fit for invoices, forms, screenshots, and UI parsing
-
-#### Weaknesses
-
-- dense pages and tiny text remain hard
-- less explicit intermediate structure than OCR + layout systems
-- high resolution remains expensive
-
-### 7) Interleaved multimodal sequence models
-
-Representative models:
-
-- Flamingo
-- Kosmos-style systems
-
-```mermaid
-flowchart LR
-    X[Interleaved Image / Text Context] --> MM[Multimodal Sequence Processor]
-    MM --> CA[Cross-Attention / Sequence Fusion]
-    CA --> DEC[Decoder / Generator]
-    DEC --> OUT[Next Tokens / Answer]
-```
-
-#### What this solves
-
-It supports prompting with richer interleavings of images and text rather than one image followed by one question.
-
-#### Strengths
-
-- closer to assistant-like multimodal interaction
-- strong few-shot and in-context multimodal prompting story
-- flexible prompting format
-
-#### Weaknesses
-
-- more complex serving and caching behavior
-- harder to optimize operationally
-- longer multimodal contexts can be expensive
-
-### 8) Encoder-free / pure decoder multimodal models
-
-Representative direction:
-
-- Fuyu-style systems
-
-```mermaid
-flowchart LR
-    I[Image Patches / Visual Tokens] --> M[Shared Decoder-only Transformer]
-    T[Text Tokens] --> M
-    M --> OUT[Generated Text]
-```
-
-#### What this solves
-
-It pushes toward a more unified token-processing stack by avoiding a separate vision encoder.
-
-#### Strengths
-
-- conceptually simple sequence processing story
-- avoids some mismatch between an external vision encoder and the LLM
-- clean “single decoder” mental model
-
-#### Weaknesses
-
-- less established as the default production recipe
-- still more of a research and exploration direction for many teams
-- training efficiency and quality tradeoffs can be challenging
-
-### Comparison of major architecture families
-
-| Family                          | Core idea                               | Best for                                  | Main weakness                         |
-|---------------------------------|-----------------------------------------|-------------------------------------------|---------------------------------------|
-| Dual encoder                    | Shared image/text embedding space       | retrieval, zero-shot classification       | weak generative reasoning             |
-| Fusion / cross-attention        | richer token-level interaction          | VQA, grounding                            | higher compute                        |
-| Projector + LLM                 | map visual tokens into LLM space        | multimodal assistants                     | fluent but weakly grounded answers    |
-| Query bridge                    | compress useful visual information      | parameter-efficient multimodal adaptation | information bottleneck                |
-| Unified encoder-decoder         | one text-generation interface           | multilingual/document generation          | heavier serving cost                  |
-| OCR-free document model         | predict output directly from page image | end-to-end document extraction            | tiny text and dense pages remain hard |
-| Interleaved multimodal sequence | images and text mixed in context        | multimodal prompting                      | serving/caching complexity            |
-| Encoder-free multimodal decoder | one decoder over all tokens             | unified research direction                | less mature production recipe         |
-
-### Visual tokenization
-
-Images are not fed in as raw pixels to an LLM directly. Common steps are:
-
-1. encode image patches or regions with a vision backbone
-2. produce a sequence of visual embeddings
-3. project those embeddings into the multimodal token space
-
-This is analogous to text tokenization in spirit: the continuous image is converted into discrete positions or feature
-tokens that later modules can process sequentially.
-
-### Training objectives
-
-Different VLMs combine several objectives.
-
-#### Contrastive alignment
-
-Match paired image/text items and separate mismatched ones.
-
-Why it is used: excellent for retrieval and shared semantic space learning.
-
-#### Image captioning / autoregressive loss
-
-Predict text conditioned on an image:
-
-$$
-\log p(y_1,\dots,y_T \mid \text{image}).
-$$
-
-Why it is used: teaches fluent image-conditioned generation.
-
-#### Matching / binary classification losses
-
-Predict whether an image and a text belong together.
-
-Why it is used: strengthens pairwise compatibility reasoning.
-
-#### Instruction tuning
-
-Train on multimodal instruction-response pairs.
-
-Why it is used: turns a base VLM into a useful assistant that follows user prompts over images.
-
-### Typical components
-
-| Component                             | Role                               | Why it is needed                                                                  |
-|---------------------------------------|------------------------------------|-----------------------------------------------------------------------------------|
-| Vision encoder                        | Extract visual features            | Images have strong spatial structure that is best handled before fusion with text |
-| Text encoder or LLM                   | Process language                   | Provides semantic composition and generation                                      |
-| Projector / adapter                   | Align feature spaces               | Vision and language embeddings usually have different dimensions and statistics   |
-| Cross-attention or multimodal decoder | Fuse modalities                    | Needed when fine-grained conditioning matters                                     |
-| Query bridge                          | Compress useful visual information | Helps balance multimodal quality with serving cost                                |
-
-### Main tradeoffs
-
-| Design choice                 | Benefit                                            | Cost                                       |
-|-------------------------------|----------------------------------------------------|--------------------------------------------|
-| Dual encoder                  | Retrieval-friendly, scalable contrastive training  | Weaker token-level cross-modal interaction |
-| Cross-attention fusion        | Better grounding and detailed multimodal reasoning | Higher compute and complexity              |
-| LLM-based VLM                 | Strong generation and instruction following        | Risk of fluent but weakly grounded answers |
-| Query bridge                  | Lower multimodal adaptation cost                   | Possible information bottleneck            |
-| High-resolution visual tokens | Better detail                                      | More memory and slower inference           |
-| OCR-free document model       | Simpler end-to-end document stack                  | Dense pages remain expensive               |
-
-### Failure modes
-
-#### Hallucination
-
-The model describes objects or relations not actually present.
-
-Why it happens: the language prior can dominate the visual evidence.
-
-#### Weak grounding
-
-The answer is plausible but not tied to the correct region or object.
-
-#### OCR and fine-detail failure
-
-Small text, charts, tables, or dense scenes can require higher resolution or specialized modules.
-
-#### Over-compression of visual context
-
-A compact bridge can reduce serving cost, but if it removes too much visual information, the model may miss details that
-matter for grounding or extraction.
-
-### Minimal code sketch
-
-```python
-image_tokens = vision_encoder(image)
-image_tokens = projector(image_tokens)
-text_tokens = tokenizer(prompt)
-output = multimodal_llm(text_tokens, image_tokens)
-```
-
-### What to remember
-
-- VLMs solve both representation alignment and cross-modal conditioning
-- Dual encoders are excellent for retrieval; fused or LLM-based models are better for rich multimodal generation
-- CLIP-style zero-shot classification works by comparing an image embedding to candidate label prompts in a shared space
-- A modern VLM often combines a vision encoder, an adapter or query bridge, and a language model
-- The main quality risk is not fluency but **faithful grounding in the visual input**
-- The main systems risk is that more visual detail usually means more memory pressure and slower inference
-
-## Vision-Language Models (VLM): Architecture & Systems
-
-Vision-Language Models (VLMs) combine **visual understanding** with **language understanding and generation**. A VLM
-takes visual input such as an image, screenshot, chart, or document page and uses that information to retrieve,
-classify, ground, explain, or generate text.
-
-A useful mental model is:
-
-- a **vision module** that turns images into visual features or visual tokens
-- a **language module** that reasons over text and often generates output
-- an **alignment or fusion mechanism** that lets the model connect the two modalities
-
-VLMs are not all the same. Some are optimized for **retrieval**, others for **grounded reasoning**, and others for
-**multimodal generation**. Those choices strongly affect both model behavior and serving cost.
-
-### What problems VLMs solve
-
-Typical VLM tasks include:
-
-- image-text retrieval
-- zero-shot image classification
-- image captioning
-- visual question answering (VQA)
-- multimodal chat
-- document understanding
-- screenshot and UI understanding
-- grounded generation over images, pages, or diagrams
-
-### Architecture taxonomy
-
-#### 1. Dual-encoder / contrastive models
-
-**Examples:** CLIP, SigLIP
-
-These models use one encoder for the image and one encoder for the text, then map both into a shared embedding space.
-
-**Best for**
-
-- image-text retrieval
+- retrieval
 - zero-shot classification
-- embedding search
 - reranking
+- serving as a strong vision backbone for later VLMs
 
-**Strengths**
+#### Complexity
 
-- simple and scalable
-- very fast at inference for retrieval use cases
-- easy to precompute embeddings and index them offline
+If the vision backbone is a ViT with $N_v$ image tokens and the text encoder sees $N_t$ text tokens, then the dominant
+encoder costs are roughly
 
-**Weaknesses**
+$$
+O(N_v^2 d) + O(N_t^2 d).
+$$
 
-- not naturally generative
-- weaker token-level grounding and reasoning than fused or generative models
-- not ideal for multimodal assistants
+During training with batch size $B$, the similarity matrix introduces an additional in-batch comparison cost of roughly
 
-**Serving implication**
+$$
+O(B^2 d).
+$$
 
-- usually lower KV-cache pressure than generative VLMs
-- often compute-bound for large embedding batches
-- a strong choice when the product is search or ranking rather than chat
+At inference for retrieval, the expensive part is usually encoding once and then searching embeddings. That is one
+reason dual encoders are operationally attractive.
 
-#### 2. Fusion / cross-attention models
+#### When to use
 
-**Examples:** ALBEF-style systems, Flamingo-style cross-attention bridges
+Use CLIP or SigLIP when the product is fundamentally about **retrieval**, **ranking**, or **zero-shot labeling**.
 
-These models allow image features and text features to interact through cross-attention or multimodal fusion blocks.
+#### When not to use
 
-**Best for**
+Do not expect a plain dual encoder to be the best choice for:
 
-- visual question answering
-- grounding
-- interleaved image-text conditioning
+- detailed grounded reasoning
+- OCR-heavy document tasks
+- long multimodal conversations
+- free-form multimodal generation
+
+### 3.2 Cross-attention bridges: Flamingo-style models
+
+Flamingo-style systems start from strong pretrained vision and language backbones, then insert cross-attention layers
+that let the language model attend to visual information.
+
+A simple abstraction is:
+
+$$
+h_\ell' = h_\ell + \operatorname{CrossAttn}\!\left(h_\ell, R(V)\right),
+$$
+
+where:
+
+- $V$ is the set of dense visual features from the vision encoder
+- $R(\cdot)$ is a resampler that compresses them to a smaller memory
+- $h_\ell$ is the language hidden state at layer $\ell$
+
+```mermaid
+flowchart LR
+    I[Image or video] --> VE[Vision encoder]
+    VE --> VF[Dense visual features]
+    VF --> R[Perceiver resampler]
+    R --> RV[Compressed visual memory]
+    T[Interleaved text context] --> LM[Language model]
+    RV --> XATTN[Inserted cross-attention layers]
+    LM --> XATTN
+    XATTN --> OUT[Generated tokens]
+```
+
+#### Why this family matters
+
+Flamingo is important because it supports **interleaved image-text prompting** and strong **few-shot multimodal
+conditioning** without retraining the whole language model from scratch.
+
+#### Complexity
+
+Suppose the resampler outputs $q$ visual tokens.
+
+- visual compression is roughly $O(q N_v d)$
+- each language-side cross-attention layer adds roughly $O(N_t q d)$ during prefill
+- during decoding, the per-token visual cross-attention cost is roughly $O(q d)$ per such layer
+
+The crucial point is that the resampler turns a potentially large $N_v$ into a smaller fixed-size memory $q$.
+
+#### When to use
+
+Use this family when you need:
+
+- interleaved image-text context
 - few-shot multimodal prompting
+- a stronger grounding story than a pure shared embedding model
 
-**Strengths**
+#### When not to use
 
-- stronger visual grounding than dual encoders
-- better when the text must attend to specific objects or regions
+This is usually not the first choice for:
 
-**Weaknesses**
+- the cheapest possible serving path
+- extremely latency-sensitive single-image classification
+- offline embedding search
 
-- more complex and more expensive than dual encoders
-- less naturally optimized for large-scale retrieval systems
+### 3.3 Vision encoder + projector + LLM: LLaVA-style models
 
-**Serving implication**
-
-- more expensive than contrastive models
-- often a middle ground between retrieval models and full multimodal assistants
-
-#### 3. Vision encoder + projector + LLM
-
-**Examples:** LLaVA and many modern multimodal assistants
-
-This is the most common modern pattern:
+This is the most common modern multimodal assistant recipe.
 
 - a vision encoder extracts visual tokens
-- a projector or adapter maps them into the LLM embedding space
-- a decoder-only LLM consumes both text tokens and visual tokens and generates text
+- a projector maps them into the language model embedding space
+- a decoder-only LLM consumes both visual and text tokens
 
-**Best for**
+Let $V\in\mathbb{R}^{N_v\times d_v}$ be vision features and let $P$ be the projector. Then
+
+$$
+Z_v = P(V)
+$$
+
+produces projected visual tokens $Z_v\in\mathbb{R}^{N_v\times d}$, which are concatenated with text tokens and fed to a
+causal decoder.
+
+```mermaid
+flowchart LR
+    I[Image] --> VE[Vision encoder]
+    VE --> VT[Visual tokens]
+    VT --> P[Projector]
+    P --> ZV[Projected visual tokens]
+    T[Prompt text] --> TOK[Tokenizer]
+    TOK --> XT[Text tokens]
+    ZV --> LLM[Decoder-only LLM]
+    XT --> LLM
+    LLM --> OUT[Generated text]
+```
+
+#### Why it became popular
+
+It reuses strong pretrained LLMs and turns them into multimodal assistants with relatively simple engineering.
+
+#### Complexity
+
+If projected visual tokens are kept explicitly inside the decoder context, then the multimodal prefill length is roughly
+
+$$
+N = N_v + N_t.
+$$
+
+The prefill cost of decoder self-attention is therefore roughly
+
+$$
+O\!\left((N_v + N_t)^2 d\right)
+$$
+
+per layer, plus MLP cost $O((N_v+N_t)d^2)$.
+
+If the model generates $N_y$ output tokens, decode-time self-attention grows with the retained prefix. A rough
+KV-cache memory scaling is
+
+$$
+O\!\left(L (N_v + N_t + N_y) d\right).
+$$
+
+This is why large visual token counts directly hurt batch size and latency.
+
+#### When to use
+
+Use this family for:
 
 - multimodal chat
 - captioning
 - VQA
-- assistant-style interfaces
+- assistant-like interfaces
+- instruction-tuned multimodal products
 
-**Strengths**
+#### When not to use
 
-- reuses strong pretrained LLMs
-- easy to instruction-tune
-- one model can handle many multimodal text-generation tasks
+Avoid it when the product is really just retrieval or when strict visual grounding and extraction fidelity matter more
+than conversational flexibility.
 
-**Weaknesses**
+### 3.4 Query bridges: BLIP-2 and Q-Former-style models
 
-- fluent answers can still be weakly grounded
-- projector quality matters a lot
-- visual token count can become a major serving bottleneck
+Instead of forwarding all visual tokens to the LLM, BLIP-2 uses a learned set of query tokens that pull relevant
+information from a frozen image encoder before passing a compact representation onward.
 
-**Serving implication**
+A useful abstraction is
 
-- highly relevant for latency, TTFT, and KV-cache analysis
-- visual tokens directly increase memory pressure and reduce achievable batch size
-- this is the most relevant family for serving experiments in this repo
+$$
+Q' = \operatorname{QFormer}(Q, V),
+$$
 
-#### 4. Query-bridge architectures
+where $Q\in\mathbb{R}^{q\times d}$ is a learned query set and $V$ are visual features from the image encoder.
 
-**Examples:** BLIP-2, Q-Former-style bridges
+```mermaid
+flowchart LR
+    I[Image] --> VE[Vision encoder]
+    VE --> VF[Dense visual features]
+    Q[Learned query tokens] --> QF[Q-Former]
+    VF --> QF
+    QF --> CQ[Compressed visual queries]
+    T[Prompt text] --> TOK[Tokenizer]
+    TOK --> XT[Text tokens]
+    CQ --> LLM[Language model]
+    XT --> LLM
+    LLM --> OUT[Generated text]
+```
 
-Instead of passing all visual features directly into the LLM, these models learn a compact set of query tokens that
-summarize useful visual information and pass only those to the language model.
+#### Complexity
 
-**Best for**
+The bridge itself has a dominant visual-query interaction cost roughly
 
-- parameter-efficient multimodal adaptation
-- lower-cost bridging of strong frozen vision and language components
+$$
+O(q N_v d),
+$$
 
-**Strengths**
+plus query self-attention and MLP terms of roughly
 
-- more efficient than end-to-end multimodal retraining
-- reduces the amount of visual information pushed into the LLM
-- often a strong engineering compromise
+$$
+O(q^2 d) + O(q d^2).
+$$
 
-**Weaknesses**
+If only $q$ compressed tokens are handed to the LLM, the downstream language model sees a shorter multimodal prefix
+than a projector-only design that forwards all $N_v$ visual tokens.
 
-- the bottleneck can discard useful visual detail
-- less conceptually simple than a direct projector-only design
+#### Why this is useful
 
-**Serving implication**
+This is a practical compromise when you want to keep strong frozen backbones and reduce multimodal token inflation.
 
-- can reduce token inflation compared with naïvely forwarding many image patches
-- a good architecture to discuss when balancing visual fidelity vs serving cost
+#### When to use
 
-#### 5. Unified encoder-decoder generative models
+Use it when:
 
-**Examples:** PaLI, Pix2Struct
+- trainable parameter budget matters
+- you want to reuse a frozen vision encoder and a frozen LLM
+- you need a more efficient bridge than naively passing all visual tokens
 
-These models provide a unified generative interface over visual and textual input. They are often strong when the output
-is text and the model must parse visual structure or multilingual content.
+#### When not to use
 
-**Best for**
+It may not be the best choice when extremely fine spatial detail must be preserved, because the bridge is a bottleneck.
 
-- image-to-text generation
-- multilingual multimodal tasks
-- document and screenshot understanding
-- structured extraction from visual input
+### 3.5 Unified encoder-decoder generation: Pix2Struct and PaLI-style models
 
-**Strengths**
+These models treat the task as conditional generation. The image and possibly a text prompt are encoded, then a decoder
+generates text or structured output.
 
-- one generation interface for many tasks
-- strong fit for document-heavy and UI-heavy tasks
-- natural output format for extraction and explanation
+A generic factorization is
 
-**Weaknesses**
+$$
+p(y_{1:N_y} \mid x_{\mathrm{image}}, x_{\mathrm{text}})
+= \prod_{t=1}^{N_y} p\!\left(y_t \mid y_{\lt t}, E(x_{\mathrm{image}}, x_{\mathrm{text}})\right),
+$$
 
-- more expensive than retrieval-only models
-- often not the best choice if retrieval is the main product requirement
+where $E(\cdot)$ is the encoder memory.
 
-**Serving implication**
+```mermaid
+flowchart LR
+    I[Image or document] --> ENC[Unified encoder]
+    T[Optional text prompt] --> ENC
+    ENC --> MEM[Encoder memory]
+    MEM --> DEC[Text decoder]
+    DEC --> OUT[Generated text or structure]
+```
 
-- sensitive to image resolution and long outputs
-- document workloads can create especially high visual-token pressure
+#### Complexity
 
-#### 6. OCR-free document specialists
+If the encoder sees $N_v$ visual tokens and $N_t$ text-prompt tokens, a rough full-attention cost is
 
-**Examples:** Donut, Pix2Struct
+$$
+O\!\left((N_v + N_t)^2 d\right).
+$$
 
-These models are specialized for documents, forms, screenshots, and UI-like inputs, often avoiding a separate OCR stage.
+If the decoder emits $N_y$ tokens, then decoder-side cost is roughly
 
-**Best for**
+$$
+O(N_y^2 d) + O\!\left(N_y (N_v + N_t) d\right)
+$$
 
-- invoices and forms
-- screenshots and dashboards
-- visually grounded extraction
-- OCR-free document pipelines
+from self-attention plus cross-attention.
 
-**Strengths**
+#### When to use
 
-- simpler end-to-end pipeline than OCR + separate parser
-- avoids some OCR error propagation
+This family is strong for:
 
-**Weaknesses**
+- image-conditioned generation
+- screenshot parsing
+- document extraction
+- multilingual multimodal generation
 
-- may still struggle with very dense layouts or small text
-- less explicit intermediate structure than OCR pipelines
-- high-resolution inputs remain expensive
+#### When not to use
 
-**Serving implication**
+It is often heavier than necessary for pure retrieval and can be expensive for interactive chat if the visual encoder is
+high-resolution.
 
-- document understanding is often more resolution-sensitive than natural-image tasks
-- large pages can increase latency sharply
+## 4. Important named models and how to think about them
 
-#### 7. Interleaved multimodal sequence models
+### CLIP
 
-**Examples:** Flamingo, Kosmos-style systems
+Think of CLIP as a **shared embedding space model**.
 
-These are built for richer image-text interleaving rather than a simple "one image, one question" pattern.
+- best for retrieval and zero-shot classification
+- often reused as a vision tower inside later VLMs
+- operationally attractive because embeddings can be precomputed offline
 
-**Best for**
+### SigLIP
 
-- multimodal in-context learning
-- assistant-like prompting over multiple images and text turns
-- image-text few-shot examples
+Think of SigLIP as a **CLIP-like dual encoder with a different training loss**.
 
-**Strengths**
+- similar serving use cases to CLIP
+- especially interesting when batch-size behavior during training matters
 
-- flexible prompting interface
-- closer to real assistant behavior
+### Flamingo
 
-**Weaknesses**
+Think of Flamingo as a **frozen LM plus visual cross-attention memories**.
 
-- more complex training and serving behavior
-- less straightforward to optimize than simple single-image flows
+- best when interleaved multimodal prompting matters
+- more complex serving path than a plain dual encoder
+- stronger few-shot multimodal story than CLIP-like models
 
-**Serving implication**
+### BLIP-2
 
-- caching and scheduling become more subtle when image/text turns are interleaved
-- realistic for agent-like and assistant-like products
+Think of BLIP-2 as a **query bottleneck between a frozen image encoder and a frozen LLM**.
 
-#### 8. Encoder-free / pure decoder multimodal models
+- good engineering compromise
+- smaller trainable bridge than full end-to-end multimodal tuning
+- useful when visual compression is acceptable
 
-**Examples:** Fuyu-style architectures
+### LLaVA
 
-These models avoid a separate vision encoder and feed image patches more directly into a decoder-only transformer.
+Think of LLaVA as a **projector plus instruction-tuned LLM assistant**.
 
-**Best for**
+- strong default baseline for multimodal chat and VQA
+- easy mental model and common in practice
+- main risk is fluent but weakly grounded output
 
-- research into simpler multimodal stacks
-- architectures that want a more unified token-processing story
+### Pix2Struct
 
-**Strengths**
+Think of Pix2Struct as **visual-input-to-text generation**, especially good for screenshots, UIs, and visually situated
+language.
 
-- conceptually unified sequence model
-- avoids some mismatch between a frozen vision encoder and an LLM
+- natural when the output is text or structured text
+- not a retrieval-first model
+- high-resolution inputs can still dominate cost
 
-**Weaknesses**
+## 5. Architecture choice by product goal
 
-- harder to train well
-- less common as the default production recipe
+| Product goal                         | Usually start with                      | Why                                                                 |
+|--------------------------------------|-----------------------------------------|---------------------------------------------------------------------|
+| image-text retrieval                 | CLIP or SigLIP                          | shared embedding space and offline indexing                         |
+| zero-shot labeling                   | CLIP or SigLIP                          | promptable label space                                              |
+| multimodal assistant                 | LLaVA-style projector + LLM             | strong conversational interface                                     |
+| few-shot interleaved prompting       | Flamingo-style cross-attention          | better support for mixed image-text context                         |
+| parameter-efficient multimodal build | BLIP-2 or Q-Former bridge               | compact trainable bridge                                            |
+| screenshot or document generation    | Pix2Struct or another encoder-decoder   | output is naturally text or structure                               |
+| strict extraction over documents     | document-specific models                | layout, OCR, and high-resolution constraints dominate architecture  |
 
-**Serving implication**
+## 6. Complexity cheat sheet
 
-- research-interesting, but not the first architecture family to optimize for production
+The table below focuses on the dominant sequence terms and omits constants.
 
-### Quick comparison
+| Family                  | Prefill complexity                                  | Decode-side intuition                               | Main memory pressure                    |
+|-------------------------|-----------------------------------------------------|-----------------------------------------------------|-----------------------------------------|
+| CLIP or SigLIP          | $O(N_v^2 d) + O(N_t^2 d)$                           | usually no autoregressive decode                    | encoder activations or embedding index  |
+| Flamingo                | $O(N_v^2 d) + O(q N_v d) + O(N_t q d)$              | per generated token still attends to visual memory  | LM KV cache plus visual memory          |
+| LLaVA-style             | $O(N_v^2 d_v) + O((N_v+N_t)^2 d)$                   | decode cost grows with retained multimodal prefix   | large decoder KV cache                  |
+| BLIP-2-style            | $O(N_v^2 d_v) + O(q N_v d) + O((q+N_t)^2 d)$        | shorter multimodal prefix than projector-only       | smaller decoder context, bridge states  |
+| Pix2Struct or PaLI-type | $O((N_v+N_t)^2 d) + O(N_y(N_v+N_t)d + N_y^2 d)$     | encoder-decoder generation                          | encoder memory plus decoder cache       |
 
-| Family                             | Representative models  | Best for                                    | Main weakness                             | Serving implication                              |
-|:-----------------------------------|:-----------------------|:--------------------------------------------|:------------------------------------------|:-------------------------------------------------|
-| Dual-encoder                       | CLIP, SigLIP           | Retrieval, zero-shot classification         | Not naturally generative                  | Fast embeddings, lower cache pressure            |
-| Fusion / cross-attention           | ALBEF, Flamingo-style  | Grounding, VQA, interleaved conditioning    | More complex and expensive                | Stronger grounding, higher inference cost        |
-| Vision encoder + projector + LLM   | LLaVA-style assistants | Multimodal chat and generation              | Can sound fluent without strong grounding | High visual-token and KV-cache pressure          |
-| Query bridge                       | BLIP-2                 | Parameter-efficient multimodal adaptation   | Information bottleneck may lose detail    | Lower token inflation than naive projector paths |
-| Unified generative encoder-decoder | PaLI, Pix2Struct       | Image-to-text, multilingual, document tasks | Heavier than retrieval models             | Sensitive to resolution and output length        |
-| OCR-free document specialist       | Donut, Pix2Struct      | Documents, screenshots, forms               | Dense pages remain expensive              | Document inputs can dominate latency             |
-| Interleaved sequence model         | Flamingo, Kosmos-style | Multimodal prompting and context learning   | Harder scheduling and serving             | More realistic assistant-like serving            |
-| Encoder-free multimodal decoder    | Fuyu-style             | Research and architectural simplification   | Less established production recipe        | Interesting research direction                   |
+## 7. Main failure modes
 
-### How to choose the right family
+### Hallucination
 
-Use a **dual encoder** if your main product is retrieval, ranking, or zero-shot classification.
+The model gives a fluent answer that is not actually supported by the image.
 
-Use a **projector + LLM** or **interleaved assistant model** if your product is a multimodal assistant or image-grounded
-conversation.
+### Weak grounding
 
-Use a **query-bridge architecture** if you want a better compromise between multimodal capability and serving cost.
+The answer is plausible but tied to the wrong region, object, or page element.
 
-Use a **document specialist** or a **unified generative model** if you care about screenshots, forms, PDFs, or document
-parsing.
+### OCR and small-text failure
 
-### Why VLMs are hard to serve
+Charts, tables, receipts, screenshots, and documents often fail because tiny text requires more spatial resolution than
+ordinary image captioning.
 
-#### Visual token inflation
+### Over-compression
 
-Images are not processed as single units. They are converted into many visual features or visual tokens. A single image
-can consume a large chunk of the model context before the model generates any text.
+Query bridges and token compression improve serving efficiency, but they can remove information that later reasoning
+would have needed.
 
-This increases:
+## 8. Minimal code sketch
 
-- time to first token (TTFT)
-- KV-cache memory usage
-- latency for long or high-resolution inputs
-- risk of smaller effective batch size
+```python
+visual_tokens = vision_encoder(image)
+compressed = projector_or_bridge(visual_tokens)
+text_tokens = tokenizer(prompt)
+output = multimodal_model(text_tokens, compressed)
+```
 
-#### Resolution vs. cost
+## 9. What to remember
 
-Higher resolution means better detail and better OCR-like behavior, but it also means more visual tokens, more attention
-cost, and more memory pressure.
-
-#### Document understanding is especially expensive
-
-Tasks such as document OCR, VQA over charts, or screenshot parsing often need fine-grained spatial detail. That
-frequently makes them more expensive than plain natural-image captioning.
-
-### Which families matter most for this repo
-
-For this project, the most important families are:
-
-1. **Dual encoders** for embedding and retrieval experiments
-2. **Vision encoder + projector + LLM** for multimodal serving discussions
-3. **Document specialists / Pix2Struct-style models** for document understanding and visual token inflation
-
-Those are the families that connect most directly to:
-
-- batching
-- KV-cache behavior
-- latency vs throughput
-- GPU memory pressure
-- serving engines such as vLLM and SGLang
-
----
-
-### Educational discussion
-
-> **What are the main components of a VLM, and why are they hard to serve?**
->
-> A modern generative VLM usually has three parts: a vision encoder, a language model, and an alignment component such
-> as a projector or query bridge. The vision side turns an image into visual tokens, and the language side reasons over
-> those visual tokens together with text tokens.
->
-> They are hard to serve because the image already consumes context and memory before text generation even starts. This
-> raises time to first token, increases KV-cache pressure, reduces the usable batch size, and makes high-resolution or
-> document-heavy workloads much more expensive than text-only serving. Optimizing them often requires better batching,
-> cache reuse, and lower-precision execution.
+- VLMs solve both **alignment** and **conditioning**.
+- CLIP and SigLIP are retrieval-first models.
+- Flamingo is a cross-attention bridge for interleaved multimodal prompting.
+- BLIP-2 uses a query bottleneck to connect frozen backbones efficiently.
+- LLaVA-style systems are strong assistant baselines but can be weakly grounded.
+- Pix2Struct-style models are natural when the final product is visual-input-to-text generation.
+- In serving, visual token count is often the first quantity to estimate.

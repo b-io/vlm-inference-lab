@@ -22,7 +22,7 @@ That extra structure is the classical **dark knowledge** idea.
 ## 2. Standard logit distillation
 
 Let the teacher logits be $z^{(t)}$ and the student logits be $z^{(s)}$.
-With temperature $T > 1$, the softened distributions are
+With temperature $T \gt 1$, the softened distributions are
 
 $$
 p_i^{(t)}(T) = \frac{\exp\left(z_i^{(t)} / T\right)}{\sum_j \exp\left(z_j^{(t)} / T\right)}
@@ -34,7 +34,7 @@ $$
 p_i^{(s)}(T) = \frac{\exp\left(z_i^{(s)} / T\right)}{\sum_j \exp\left(z_j^{(s)} / T\right)}.
 $$
 
-The standard KD loss is
+A standard KD objective is
 
 $$
 \begin{aligned}
@@ -59,7 +59,7 @@ The factor $T^2$ compensates for gradient rescaling under temperature smoothing.
 At $T=1$, the softmax may be too sharp. Larger $T$ reveals richer probability structure:
 
 $$
-\mathrm{softmax}_T(z)_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}.
+\operatorname{softmax}_T(z)_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}.
 $$
 
 - large $T$ gives smoother targets
@@ -73,20 +73,18 @@ flowchart LR
     X --> S[Student model]
     T --> ZT[Teacher logits]
     S --> ZS[Student logits]
-    ZT --> PT[Softmax with temperature T]
-    ZS --> PS[Softmax with temperature T]
+    ZT --> PT[Softmax at temperature T]
+    ZS --> PS[Softmax at temperature T]
     PT --> KLD[KL divergence]
     PS --> KLD
-    S --> SH[Student hard prediction]
+    S --> SH[Student prediction]
     Y[Ground-truth label y] --> CE[Cross-entropy]
     SH --> CE
-    KLD --> L[Aggregated loss]
+    KLD --> L[Total loss]
     CE --> L
 ```
 
 ## 5. Worked example
-
-The screenshots correspond to the following pedagogical example.
 
 Assume a three-class problem with softened teacher and student distributions at temperature $T=5$:
 
@@ -113,8 +111,8 @@ $$
 \mathrm{KL}(t \| s)
 &\approx 0.8668\ln\!\left(\frac{0.8668}{0.8236}\right)
     + 0.1173\ln\!\left(\frac{0.1173}{0.1653}\right) \\
-&\quad + 0.0159\ln\!\left(\frac{0.0159}{0.0101}\right)
-    \approx 0.0105.
+&\quad + 0.0159\ln\!\left(\frac{0.0159}{0.0101}\right) \\
+&\approx 0.0113.
 \end{aligned}
 $$
 
@@ -127,7 +125,7 @@ $$
 Using $\alpha = 0.5$ and $T = 5$:
 
 $$
-\mathcal{L} = 0.5 \cdot 0.1941 + 0.5 \cdot 25 \cdot 0.0105 = 0.2283.
+\mathcal{L} = 0.5 \cdot 0.1941 + 0.5 \cdot 25 \cdot 0.0113 \approx 0.2382.
 $$
 
 ### Important implementation note
@@ -141,7 +139,7 @@ makes the role of the two terms explicit.
 Let
 
 $$
-q_i(T) = \mathrm{softmax}(z_i / T),
+q_i(T) = \operatorname{softmax}(z_i / T),
 $$
 
 and consider a KL term between softened teacher and student distributions. Because the logits are divided by $T$, the
@@ -164,11 +162,9 @@ For VLMs, distillation often goes beyond final logits. The student may match:
 A simple feature-matching term is
 
 $$
-\begin{aligned}
 \mathcal{L}_{\mathrm{feat}}
-&= \sum_{\ell \in \mathcal{S}} w_\ell \,
-    \left\lVert h_\ell^{(t)} - P_\ell\!\left(h_\ell^{(s)}\right) \right\rVert_2^2.
-\end{aligned}
+= \sum_{\ell \in \mathcal{S}} w_\ell \,
+    \left\lVert h_\ell^{(t)} - P_\ell\!\left(h_\ell^{(s)}\right) \right\rVert_2^2,
 $$
 
 where $P_\ell$ projects the student into the teacher space when dimensions differ.
@@ -179,7 +175,7 @@ For autoregressive models, distillation can target full generated sequences.
 If the teacher generates $\hat y_{1:T}$, the student can minimize
 
 $$
-\mathcal{L}_{\mathrm{seq}} = - \sum_{t=1}^{T} \log p_\theta\!\left(\hat y_t \mid \hat y_{<t}, x\right).
+\mathcal{L}_{\mathrm{seq}} = - \sum_{t=1}^{T} \log p_\theta\!\left(\hat y_t \mid \hat y_{\lt t}, x\right).
 $$
 
 This is useful when the teacher is more reliable than the raw labels or when the student should mimic the teacher's
@@ -207,14 +203,12 @@ $$
 \end{aligned}
 $$
 
-## 10. Diagram: multi-level VLM distillation
-
 ```mermaid
 flowchart TD
-    X[Image + text input] --> TV[Teacher vision encoder]
-    X --> TL[Teacher language / decoder stack]
+    X[Image and text input] --> TV[Teacher vision encoder]
+    X --> TL[Teacher language stack]
     X --> SV[Student vision encoder]
-    X --> SL[Student language / decoder stack]
+    X --> SL[Student language stack]
 
     TV --> TF[Teacher visual features]
     SV --> SF[Student visual features]
@@ -223,7 +217,7 @@ flowchart TD
 
     TL --> TT[Teacher token distribution]
     SL --> ST[Student token distribution]
-    TT --> KD[KL / sequence distillation]
+    TT --> KD[KL or sequence distillation]
     ST --> KD
 
     TV --> TA[Teacher aligned embeddings]
@@ -236,7 +230,37 @@ flowchart TD
     AL --> TOT
 ```
 
-## 11. Operational value
+## 10. Cost model during training
+
+Let $C_t$ be the teacher forward cost and $C_s$ the student forward-backward cost.
+
+### Online teacher
+
+If the teacher runs during training, the rough compute per batch is
+
+$$
+O(C_t + C_s).
+$$
+
+That can be much more expensive than plain student training.
+
+### Offline teacher cache
+
+If teacher logits or features are precomputed and stored, training compute can move closer to
+
+$$
+O(C_s),
+$$
+
+but storage and IO then matter. Cached feature distillation can also require significant disk space when many layers are
+stored.
+
+### Inference-time cost
+
+At deployment, only the student remains. So KD does **not** change the student's asymptotic serving complexity; it aims
+to improve the quality-versus-cost point of the deployed student.
+
+## 11. When KD is most useful
 
 KD is valuable when the teacher is too expensive to deploy. Common goals are:
 
@@ -261,19 +285,12 @@ KD can fail when:
 - the teacher is miscalibrated or wrong
 - the student learns style without grounding
 - the language quality remains fluent while visual fidelity degrades
+- the distillation target is badly matched to the student architecture
 
-For VLMs, this last point is especially important.
+For VLMs, fluent-but-ungrounded behavior is especially dangerous.
 
-## 13. Best practices
+## 13. Practical summary
 
-- start from a teacher that is stronger on the target task, not just larger
-- tune $T$ and $\alpha$ jointly; there is no universal best setting
-- preserve task loss alongside KD loss so the student does not overfit the teacher's mistakes
-- for VLMs, evaluate grounding, OCR, retrieval, and hallucination metrics explicitly
-- combine KD with quantization or pruning only after a stable student baseline exists
-
-## 14. Practical summary
-
-> Knowledge distillation is a way to move from a high-quality but expensive teacher to a deployment-sized student. I
-> would think in terms of logit distillation, feature distillation, and sequence distillation, and for VLMs I would
-> explicitly evaluate whether the student preserved grounding, not just text fluency.
+> Knowledge distillation is a way to move from a high-quality but expensive teacher to a deployment-sized student. The
+> main choices are logit distillation, feature distillation, and sequence distillation. For VLMs, the most important
+> extra question is whether the student preserved grounding, not just text fluency.
