@@ -53,14 +53,14 @@ This encourages semantic agreement across languages.
 
 ```mermaid
 flowchart TD
-    A[Image] --> B[Vision encoder]
-    C[Caption: English] --> D[Text encoder]
-    E[Caption: French] --> D
-    F[Caption: German] --> D
-    B --> G[Shared embedding space]
+    A["Image"] --> B["Vision encoder"]
+    C["Caption: English"] --> D["Text encoder"]
+    E["Caption: French"] --> D
+    F["Caption: German"] --> D
+    B --> G["Shared embedding space"]
     D --> G
-    G --> H[Image-text contrastive loss]
-    G --> I[Cross-lingual consistency loss]
+    G --> H["Image-text contrastive loss"]
+    G --> I["Cross-lingual consistency loss"]
 ```
 
 ## 4. Why multilingual alignment is hard

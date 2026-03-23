@@ -37,10 +37,10 @@ So with a high cache hit ratio $h$, TTFT can drop substantially.
 
 ```mermaid
 flowchart LR
-    A[Incoming request] --> B{Shared prefix cached?}
-    B -->|Yes| C[Reuse KV blocks for prefix]
-    B -->|No| D[Compute full prefill]
-    C --> E[Decode phase]
+    A["Incoming request"] --> B{"Shared prefix cached?"}
+    B -->|Yes| C["Reuse KV blocks for prefix"]
+    B -->|No| D["Compute full prefill"]
+    C --> E["Decode phase"]
     D --> E
 ```
 
@@ -68,12 +68,12 @@ The scheduling benefit comes from allowing decode work to be inserted between th
 
 ```mermaid
 flowchart TD
-    A[Large prompt or image tokens] --> B[Prefill chunk 1]
-    B --> C[Decode step for active batch]
-    C --> D[Prefill chunk 2]
-    D --> E[Decode step for active batch]
-    E --> F[Prefill chunk 3]
-    F --> G[Normal decode loop]
+    A["Large prompt or image tokens"] --> B["Prefill chunk 1"]
+    B --> C["Decode step for active batch"]
+    C --> D["Prefill chunk 2"]
+    D --> E["Decode step for active batch"]
+    E --> F["Prefill chunk 3"]
+    F --> G["Normal decode loop"]
 ```
 
 ## 3. Preemption
@@ -104,10 +104,10 @@ $$
 
 ```mermaid
 flowchart LR
-    A[Incoming high-priority request] --> B{Enough memory / slots?}
-    B -->|Yes| C[Admit immediately]
-    B -->|No| D[Preempt or evict lower-priority work]
-    D --> E[Free memory / batch slot]
+    A["Incoming high-priority request"] --> B{"Enough memory / slots?"}
+    B -->|Yes| C["Admit immediately"]
+    B -->|No| D["Preempt or evict lower-priority work"]
+    D --> E["Free memory / batch slot"]
     E --> C
 ```
 
@@ -175,21 +175,21 @@ VLMs intensify these issues because:
 
 ```mermaid
 flowchart LR
-    A[Request arrives] --> B[Queue / admission control]
-    B --> C{Prefix cache hit?}
-    C -->|Yes| D[Reuse cached KV]
-    C -->|No| E[Prefill]
-    E --> F{Chunk prefill?}
-    F -->|Yes| G[Interleave with decode]
-    F -->|No| H[Run full prefill]
-    D --> I[Decode loop]
+    A["Request arrives"] --> B["Queue / admission control"]
+    B --> C{"Prefix cache hit?"}
+    C -->|Yes| D["Reuse cached KV"]
+    C -->|No| E["Prefill"]
+    E --> F{"Chunk prefill?"}
+    F -->|Yes| G["Interleave with decode"]
+    F -->|No| H["Run full prefill"]
+    D --> I["Decode loop"]
     G --> I
     H --> I
-    I --> J{Resource pressure?}
-    J -->|Yes| K[Preemption / eviction / reschedule]
-    J -->|No| L[Continue decoding]
+    I --> J{"Resource pressure?"}
+    J -->|Yes| K["Preemption / eviction / reschedule"]
+    J -->|No| L["Continue decoding"]
     K --> L
-    L --> M[Response complete]
+    L --> M["Response complete"]
 ```
 
 ## Practical summary

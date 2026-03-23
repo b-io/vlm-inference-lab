@@ -23,20 +23,20 @@ budget.
 
 ```mermaid
 flowchart TD
-    A[Sequential data] --> B[RNN family]
-    A --> C[Temporal CNN]
-    A --> D[Transformer family]
+    A["Sequential data"] --> B["RNN family"]
+    A --> C["Temporal CNN"]
+    A --> D["Transformer family"]
 
-    B --> B1[Vanilla RNN]
-    B --> B2[LSTM]
-    B --> B3[GRU]
+    B --> B1["Vanilla RNN"]
+    B --> B2["LSTM"]
+    B --> B3["GRU"]
 
-    C --> C1[Causal 1D CNN]
-    C --> C2[Dilated TCN]
+    C --> C1["Causal 1D CNN"]
+    C --> C2["Dilated TCN"]
 
-    D --> D1[Encoder-only]
-    D --> D2[Decoder-only]
-    D --> D3[Encoder-decoder]
+    D --> D1["Encoder-only"]
+    D --> D2["Decoder-only"]
+    D --> D3["Encoder-decoder"]
 ```
 
 ## RNN family

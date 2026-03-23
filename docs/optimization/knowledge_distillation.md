@@ -69,18 +69,18 @@ $$
 
 ```mermaid
 flowchart LR
-    X[Input x] --> T[Teacher model]
-    X --> S[Student model]
-    T --> ZT[Teacher logits]
-    S --> ZS[Student logits]
-    ZT --> PT[Softmax at temperature T]
-    ZS --> PS[Softmax at temperature T]
-    PT --> KLD[KL divergence]
+    X["Input x"] --> T["Teacher model"]
+    X --> S["Student model"]
+    T --> ZT["Teacher logits"]
+    S --> ZS["Student logits"]
+    ZT --> PT["Softmax at temperature T"]
+    ZS --> PS["Softmax at temperature T"]
+    PT --> KLD["KL divergence"]
     PS --> KLD
-    S --> SH[Student prediction]
-    Y[Ground-truth label y] --> CE[Cross-entropy]
+    S --> SH["Student prediction"]
+    Y["Ground-truth label y"] --> CE["Cross-entropy"]
     SH --> CE
-    KLD --> L[Total loss]
+    KLD --> L["Total loss"]
     CE --> L
 ```
 
@@ -205,27 +205,27 @@ $$
 
 ```mermaid
 flowchart TD
-    X[Image and text input] --> TV[Teacher vision encoder]
-    X --> TL[Teacher language stack]
-    X --> SV[Student vision encoder]
-    X --> SL[Student language stack]
+    X["Image and text input"] --> TV["Teacher vision encoder"]
+    X --> TL["Teacher language stack"]
+    X --> SV["Student vision encoder"]
+    X --> SL["Student language stack"]
 
-    TV --> TF[Teacher visual features]
-    SV --> SF[Student visual features]
-    TF --> VF[Vision feature loss]
+    TV --> TF["Teacher visual features"]
+    SV --> SF["Student visual features"]
+    TF --> VF["Vision feature loss"]
     SF --> VF
 
-    TL --> TT[Teacher token distribution]
-    SL --> ST[Student token distribution]
-    TT --> KD[KL or sequence distillation]
+    TL --> TT["Teacher token distribution"]
+    SL --> ST["Student token distribution"]
+    TT --> KD["KL or sequence distillation"]
     ST --> KD
 
-    TV --> TA[Teacher aligned embeddings]
-    SV --> SA[Student aligned embeddings]
-    TA --> AL[Alignment loss]
+    TV --> TA["Teacher aligned embeddings"]
+    SV --> SA["Student aligned embeddings"]
+    TA --> AL["Alignment loss"]
     SA --> AL
 
-    VF --> TOT[Total loss]
+    VF --> TOT["Total loss"]
     KD --> TOT
     AL --> TOT
 ```

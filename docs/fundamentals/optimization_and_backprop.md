@@ -89,10 +89,10 @@ Backpropagation is just systematic application of this rule to a computational g
 
 ```mermaid
 flowchart LR
-    X[x] --> H[h(x)]
-    H --> G[g(h(x))]
-    G --> F[f(g(h(x)))]
-    F --> L[Loss L]
+    X["x"] --> H["h(x)"]
+    H --> G["g(h(x))"]
+    G --> F["f(g(h(x)))"]
+    F --> L["Loss L"]
 ```
 
 ## 4. Worked example: a 2-layer network

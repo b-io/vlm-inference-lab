@@ -79,12 +79,12 @@ A good mental sequence is:
 
 ```mermaid
 flowchart LR
-    A[vLLM serve] --> B[Functional validation]
-    B --> C[vLLM complete or simple request]
-    C --> D[vLLM bench serve]
-    D --> E[vLLM bench sweep serve]
-    E --> F[Pareto selection]
-    F --> G[Chosen serving profile]
+    A["vLLM serve"] --> B["Functional validation"]
+    B --> C["vLLM complete or simple request"]
+    C --> D["vLLM bench serve"]
+    D --> E["vLLM bench sweep serve"]
+    E --> F["Pareto selection"]
+    F --> G["Chosen serving profile"]
 ```
 
 ## 3. Pareto reasoning
@@ -141,13 +141,13 @@ A useful comparison is:
 
 ```mermaid
 flowchart TD
-    A[Serving problem] --> B[vLLM]
-    A --> C[SGLang]
-    B --> D[High-performance serving]
-    B --> E[Benchmark CLI ecosystem]
-    C --> F[Efficient runtime scheduling]
-    C --> G[Structured inference workflows]
-    D --> H[Latency / throughput tradeoffs]
+    A["Serving problem"] --> B["vLLM"]
+    A --> C["SGLang"]
+    B --> D["High-performance serving"]
+    B --> E["Benchmark CLI ecosystem"]
+    C --> F["Efficient runtime scheduling"]
+    C --> G["Structured inference workflows"]
+    D --> H["Latency / throughput tradeoffs"]
     E --> H
     F --> H
     G --> H

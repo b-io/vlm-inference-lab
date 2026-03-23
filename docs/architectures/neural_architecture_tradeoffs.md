@@ -28,35 +28,35 @@ see [Model complexity, parallelism, and hardware](../serving/model_complexity_pa
 
 ```mermaid
 flowchart TD
-    A[Neural networks] --> B[Feed-forward]
-    A --> C[Convolutional]
-    A --> D[Sequential / recurrent]
-    A --> E[Attention-based]
-    A --> F[Graph / structured]
-    A --> G[Generative latent-variable]
-    A --> H[Sparse / conditional compute]
+    A["Neural networks"] --> B["Feed-forward"]
+    A --> C["Convolutional"]
+    A --> D["Sequential / recurrent"]
+    A --> E["Attention-based"]
+    A --> F["Graph / structured"]
+    A --> G["Generative latent-variable"]
+    A --> H["Sparse / conditional compute"]
 
-    B --> B1[MLP]
-    B --> B2[Residual MLP / Mixer]
+    B --> B1["MLP"]
+    B --> B2["Residual MLP / Mixer"]
 
-    C --> C1[CNN]
-    C --> C2[ResNet / DenseNet]
-    C --> C3[U-Net / FPN]
+    C --> C1["CNN"]
+    C --> C2["ResNet / DenseNet"]
+    C --> C3["U-Net / FPN"]
 
-    D --> D1[RNN]
-    D --> D2[LSTM / GRU]
-    D --> D3[Temporal CNN]
+    D --> D1["RNN"]
+    D --> D2["LSTM / GRU"]
+    D --> D3["Temporal CNN"]
 
-    E --> E1[Transformer]
-    E --> E2[ViT / Swin]
-    E --> E3[VLM projector + LLM]
+    E --> E1["Transformer"]
+    E --> E2["ViT / Swin"]
+    E --> E3["VLM projector + LLM"]
 
-    F --> F1[GNN]
+    F --> F1["GNN"]
 
-    G --> G1[Autoencoder / VAE]
-    G --> G2[Diffusion backbone]
+    G --> G1["Autoencoder / VAE"]
+    G --> G2["Diffusion backbone"]
 
-    H --> H1[Mixture of Experts]
+    H --> H1["Mixture of Experts"]
 ```
 
 ## 1. MLPs and residual MLPs

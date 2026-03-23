@@ -167,15 +167,15 @@ reasoning about **relative displacement**.
 
 ```mermaid
 flowchart LR
-    P[Position index t] --> F1[low frequency sin/cos]
-    P --> F2[mid frequency sin/cos]
-    P --> F3[high frequency sin/cos]
-    F1 --> PE[Positional vector p_t]
+    P["Position index t"] --> F1["low frequency sin/cos"]
+    P --> F2["mid frequency sin/cos"]
+    P --> F3["high frequency sin/cos"]
+    F1 --> PE["Positional vector p_t"]
     F2 --> PE
     F3 --> PE
-    T[Token embedding e_t] --> ADD[Add]
+    T["Token embedding e_t"] --> ADD["Add"]
     PE --> ADD
-    ADD --> H[Transformer input h_t]
+    ADD --> H["Transformer input h_t"]
 ```
 
 ---
@@ -298,15 +298,15 @@ So the score between positions $i$ and $j$ naturally depends on the relative off
 
 ```mermaid
 flowchart TD
-    X[Token hidden state h_t] --> Q[Linear projection to q_t]
-    X --> K[Linear projection to k_t]
-    P[Position index t] --> RQ[Rotate q_t by angle based on t]
-    P --> RK[Rotate k_t by angle based on t]
+    X["Token hidden state h_t"] --> Q["Linear projection to q_t"]
+    X --> K["Linear projection to k_t"]
+    P["Position index t"] --> RQ["Rotate q_t by angle based on t"]
+    P --> RK["Rotate k_t by angle based on t"]
     Q --> RQ
     K --> RK
-    RQ --> QS[RoPE q_t]
-    RK --> KS[RoPE k_t]
-    QS --> A[Attention score]
+    RQ --> QS["RoPE q_t"]
+    RK --> KS["RoPE k_t"]
+    QS --> A["Attention score"]
     KS --> A
 ```
 
@@ -389,15 +389,15 @@ For OCR, document understanding, grounding, and REC, spatial location is not opt
 
 ```mermaid
 flowchart LR
-    IMG[Image] --> PATCH[Patchify]
-    PATCH --> VE[Patch embeddings]
-    ROW[Row position embedding]
-    COL[Column position embedding]
-    ROW --> ADD[Add / combine]
+    IMG["Image"] --> PATCH["Patchify"]
+    PATCH --> VE["Patch embeddings"]
+    ROW["Row position embedding"]
+    COL["Column position embedding"]
+    ROW --> ADD["Add / combine"]
     COL --> ADD
     VE --> ADD
-    ADD --> TOKENS[2D-aware visual tokens]
-    TOKENS --> VIT[Vision Transformer or VLM encoder]
+    ADD --> TOKENS["2D-aware visual tokens"]
+    TOKENS --> VIT["Vision Transformer or VLM encoder"]
 ```
 
 ---

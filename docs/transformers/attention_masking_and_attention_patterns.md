@@ -59,10 +59,10 @@ So the mask determines the model's **information flow graph**.
 
 ```mermaid
 flowchart LR
-    A[Attention scores QK^T / sqrt d_k] --> B[Add mask M]
-    B --> C[Softmax]
-    C --> D[Weighted sum of V]
-    D --> E[Contextual representation]
+    A["Attention scores QK^T / sqrt d_k"] --> B["Add mask M"]
+    B --> C["Softmax"]
+    C --> D["Weighted sum of V"]
+    D --> E["Contextual representation"]
 ```
 
 ## 3. Padding masks
@@ -132,13 +132,13 @@ $$
 ```mermaid
 flowchart TD
     subgraph Decoder-only causal attention
-        T1[T1] --> T1
-        T2[T2] --> T1
+        T1["T1"] --> T1
+        T2["T2"] --> T1
         T2 --> T2
-        T3[T3] --> T1
+        T3["T3"] --> T1
         T3 --> T2
         T3 --> T3
-        T4[T4] --> T1
+        T4["T4"] --> T1
         T4 --> T2
         T4 --> T3
         T4 --> T4
@@ -208,15 +208,15 @@ Encoder-decoder Transformers combine three attention types:
 ```mermaid
 flowchart LR
     subgraph Encoder
-        E1[X1]
-        E2[X2]
-        E3[X3]
+        E1["X1"]
+        E2["X2"]
+        E3["X3"]
     end
 
     subgraph Decoder
-        D1[Y1]
-        D2[Y2]
-        D3[Y3]
+        D1["Y1"]
+        D2["Y2"]
+        D3["Y3"]
     end
 
     E1 --> E2
@@ -354,12 +354,12 @@ to the language model.
 
 ```mermaid
 flowchart LR
-    I[Image patches] --> VE[Vision encoder]
-    VE --> VF[Vision features]
-    Q[Learned query tokens] --> QA[Cross-attend into vision]
+    I["Image patches"] --> VE["Vision encoder"]
+    VE --> VF["Vision features"]
+    Q["Learned query tokens"] --> QA["Cross-attend into vision"]
     VF --> QA
-    QA --> B[Bridge/query outputs]
-    B --> LLM[Language model]
+    QA --> B["Bridge/query outputs"]
+    B --> LLM["Language model"]
 ```
 
 ### Why masking matters in VLMs

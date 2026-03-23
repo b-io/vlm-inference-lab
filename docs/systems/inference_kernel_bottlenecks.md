@@ -52,13 +52,13 @@ $$
 
 ```mermaid
 flowchart LR
-    A[Input text + image] --> B[Vision encoder / patching]
-    B --> C[Projector / fusion]
-    C --> D[LLM prefill]
-    D --> E[KV cache populated]
-    E --> F[Decode step 1]
-    F --> G[Decode step 2]
-    G --> H[... repeated token loop ...]
+    A["Input text + image"] --> B["Vision encoder / patching"]
+    B --> C["Projector / fusion"]
+    C --> D["LLM prefill"]
+    D --> E["KV cache populated"]
+    E --> F["Decode step 1"]
+    F --> G["Decode step 2"]
+    G --> H["... repeated token loop ..."]
 ```
 
 ## 4. Why decode often becomes memory-bound
@@ -130,11 +130,11 @@ because intermediate writes and reads are reduced.
 
 ```mermaid
 flowchart TD
-    A[Profile serving trace] --> B[Find dominant operators]
-    B --> C{Memory-bound or compute-bound?}
-    C -->|Memory-bound| D[Reduce bytes moved / improve locality / quantize]
-    C -->|Compute-bound| E[Improve kernel efficiency / tensor-core use / fusion]
-    D --> F[Re-benchmark]
+    A["Profile serving trace"] --> B["Find dominant operators"]
+    B --> C{"Memory-bound or compute-bound?"}
+    C -->|Memory-bound| D["Reduce bytes moved / improve locality / quantize"]
+    C -->|Compute-bound| E["Improve kernel efficiency / tensor-core use / fusion"]
+    D --> F["Re-benchmark"]
     E --> F
 ```
 

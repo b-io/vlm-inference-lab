@@ -63,11 +63,11 @@ They improve gradient flow and enable much deeper networks.
 
 ```mermaid
 flowchart LR
-    X[input] --> C1[conv / norm / activation]
-    C1 --> C2[conv / norm]
-    X --> ADD[(+)]
+    X["input"] --> C1["conv / norm / activation"]
+    C1 --> C2["conv / norm"]
+    X --> ADD["(+)"]
     C2 --> ADD
-    ADD --> Y[output]
+    ADD --> Y["output"]
 ```
 
 ### Why they matter
@@ -109,12 +109,12 @@ precise localization.
 
 ```mermaid
 flowchart TD
-    A[input image] --> B[encoder]
-    B --> C[bottleneck]
-    C --> D[decoder]
-    B --> E[skip features]
+    A["input image"] --> B["encoder"]
+    B --> C["bottleneck"]
+    C --> D["decoder"]
+    B --> E["skip features"]
     E --> D
-    D --> F[pixel-level output]
+    D --> F["pixel-level output"]
 ```
 
 ### 5.5 Feature pyramids (FPN)

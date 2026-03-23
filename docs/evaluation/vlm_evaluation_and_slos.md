@@ -43,11 +43,11 @@ the slice metrics $M_k$ are often more informative than the overall weighted ave
 
 ```mermaid
 flowchart TD
-    A[Raw product use cases] --> B[Task taxonomy]
-    B --> C[Eval slices]
-    C --> D[Task metrics]
-    C --> E[Latency and cost metrics]
-    D --> F[Decision report]
+    A["Raw product use cases"] --> B["Task taxonomy"]
+    B --> C["Eval slices"]
+    C --> D["Task metrics"]
+    C --> E["Latency and cost metrics"]
+    D --> F["Decision report"]
     E --> F
 ```
 
@@ -144,12 +144,12 @@ the operational use of a Pareto frontier.
 
 ```mermaid
 flowchart LR
-    A[Choose serving configs] --> B[Run benchmark tier]
-    B --> C[Measure latency / throughput]
-    B --> D[Run task eval slices]
-    C --> E[Combine with SLOs]
+    A["Choose serving configs"] --> B["Run benchmark tier"]
+    B --> C["Measure latency / throughput"]
+    B --> D["Run task eval slices"]
+    C --> E["Combine with SLOs"]
     D --> E
-    E --> F[Pareto / release decision]
+    E --> F["Pareto / release decision"]
 ```
 
 ## 7. Why this matters for documents and VLMs

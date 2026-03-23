@@ -37,12 +37,12 @@ The challenge is not just recognition but **disambiguation**.
 
 ```mermaid
 flowchart LR
-    A[Image] --> B[Vision encoder]
-    C[Referring expression] --> D[Text encoder or decoder prompt]
-    B --> E[Cross-modal fusion / grounding module]
+    A["Image"] --> B["Vision encoder"]
+    C["Referring expression"] --> D["Text encoder or decoder prompt"]
+    B --> E["Cross-modal fusion / grounding module"]
     D --> E
-    E --> F[Candidate regions or dense features]
-    F --> G[Select box / region / mask]
+    E --> F["Candidate regions or dense features"]
+    F --> G["Select box / region / mask"]
 ```
 
 ## 3. Common modeling styles
@@ -121,12 +121,12 @@ This connects REC directly to enterprise document workflows.
 
 ```mermaid
 flowchart TD
-    A[Document page image] --> B[Layout / visual encoder]
-    C[Grounding query] --> D[Language side]
-    B --> E[Cross-modal grounding]
+    A["Document page image"] --> B["Layout / visual encoder"]
+    C["Grounding query"] --> D["Language side"]
+    B --> E["Cross-modal grounding"]
     D --> E
-    E --> F[Field / region prediction]
-    F --> G[Box, mask, or extracted text span]
+    E --> F["Field / region prediction"]
+    F --> G["Box, mask, or extracted text span"]
 ```
 
 ## 7. Failure modes

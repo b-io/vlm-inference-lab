@@ -45,15 +45,15 @@ time.
 
 ```mermaid
 flowchart TD
-    A[Document image or PDF page] --> B[OCR plus NLP pipeline]
-    A --> C[Layout-aware multimodal encoder]
-    A --> D[OCR-free encoder-decoder]
-    A --> E[VLM vision encoder plus LLM]
+    A["Document image or PDF page"] --> B["OCR plus NLP pipeline"]
+    A --> C["Layout-aware multimodal encoder"]
+    A --> D["OCR-free encoder-decoder"]
+    A --> E["VLM vision encoder plus LLM"]
 
-    B --> B1[Text and boxes]
-    C --> C1[LayoutLM-like]
-    D --> D1[Donut or Pix2Struct-like]
-    E --> E1[Projector or bridge plus LLM reasoning]
+    B --> B1["Text and boxes"]
+    C --> C1["LayoutLM-like"]
+    D --> D1["Donut or Pix2Struct-like"]
+    E --> E1["Projector or bridge plus LLM reasoning"]
 ```
 
 ## 5. OCR plus NLP pipelines
@@ -157,10 +157,10 @@ where $E(\cdot)$ is the visual encoder memory.
 
 ```mermaid
 flowchart LR
-    P[Page image] --> VE[Visual encoder]
-    VE --> MEM[Visual memory]
-    MEM --> DEC[Autoregressive decoder]
-    DEC --> OUT[JSON, fields, or answer text]
+    P["Page image"] --> VE["Visual encoder"]
+    VE --> MEM["Visual memory"]
+    MEM --> DEC["Autoregressive decoder"]
+    DEC --> OUT["JSON, fields, or answer text"]
 ```
 
 ### Complexity

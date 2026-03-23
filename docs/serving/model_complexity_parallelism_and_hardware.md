@@ -459,14 +459,14 @@ So a design that is easy to train is not always the easiest to serve efficiently
 
 ```mermaid
 flowchart TD
-    A[Parallelism] --> B[Data parallelism]
-    A --> C[Model parallelism]
-    A --> D[Sequence / context parallelism]
-    A --> E[Expert parallelism]
-    A --> F[Kernel / operator-level parallelism]
+    A["Parallelism"] --> B["Data parallelism"]
+    A --> C["Model parallelism"]
+    A --> D["Sequence / context parallelism"]
+    A --> E["Expert parallelism"]
+    A --> F["Kernel / operator-level parallelism"]
 
-    C --> C1[Tensor parallelism]
-    C --> C2[Pipeline parallelism]
+    C --> C1["Tensor parallelism"]
+    C --> C2["Pipeline parallelism"]
 ```
 
 ## 14. Hardware features that change the practical picture

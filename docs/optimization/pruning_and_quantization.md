@@ -123,12 +123,12 @@ This matters because VLM serving cost may come from both:
 
 ```mermaid
 flowchart TD
-    A[Baseline multimodal model] --> B{What is the bottleneck?}
-    B -->|Weights / VRAM| Q[Quantization]
-    B -->|Tensor size / compute| P[Structured pruning]
-    B -->|Visual token inflation| T[Token pruning or visual reduction]
-    B -->|Quality still too high-cost| D[Distillation]
-    Q --> E[Re-evaluate latency, throughput, quality]
+    A["Baseline multimodal model"] --> B{"What is the bottleneck?"}
+    B -->|Weights / VRAM| Q["Quantization"]
+    B -->|Tensor size / compute| P["Structured pruning"]
+    B -->|Visual token inflation| T["Token pruning or visual reduction"]
+    B -->|Quality still too high-cost| D["Distillation"]
+    Q --> E["Re-evaluate latency, throughput, quality"]
     P --> E
     T --> E
     D --> E
@@ -182,13 +182,13 @@ sometimes re-training.
 
 ```mermaid
 flowchart LR
-    A[Teacher or baseline model] --> B[Apply pruning or token reduction]
-    B --> C[Apply quantization]
-    C --> D[Benchmark TTFT / TPOT / throughput]
-    D --> E[Evaluate task quality and grounding]
-    E --> F{Acceptable?}
-    F -->|Yes| G[Ship candidate]
-    F -->|No| H[Retune compression or distill]
+    A["Teacher or baseline model"] --> B["Apply pruning or token reduction"]
+    B --> C["Apply quantization"]
+    C --> D["Benchmark TTFT / TPOT / throughput"]
+    D --> E["Evaluate task quality and grounding"]
+    E --> F{"Acceptable?"}
+    F -->|Yes| G["Ship candidate"]
+    F -->|No| H["Retune compression or distill"]
     H --> B
 ```
 

@@ -82,11 +82,11 @@ where $y_{ij}\in\{-1,+1\}$ indicates whether the image-text pair matches.
 
 ```mermaid
 flowchart LR
-    I[Image] --> IE[Image encoder]
-    T[Text] --> TE[Text encoder]
-    IE --> VI[Image embedding]
-    TE --> VT[Text embedding]
-    VI --> SIM[Similarity in shared space]
+    I["Image"] --> IE["Image encoder"]
+    T["Text"] --> TE["Text encoder"]
+    IE --> VI["Image embedding"]
+    TE --> VT["Text embedding"]
+    VI --> SIM["Similarity in shared space"]
     VT --> SIM
 ```
 
@@ -152,14 +152,14 @@ where:
 
 ```mermaid
 flowchart LR
-    I[Image or video] --> VE[Vision encoder]
-    VE --> VF[Dense visual features]
-    VF --> R[Perceiver resampler]
-    R --> RV[Compressed visual memory]
-    T[Interleaved text context] --> LM[Language model]
-    RV --> XATTN[Inserted cross-attention layers]
+    I["Image or video"] --> VE["Vision encoder"]
+    VE --> VF["Dense visual features"]
+    VF --> R["Perceiver resampler"]
+    R --> RV["Compressed visual memory"]
+    T["Interleaved text context"] --> LM["Language model"]
+    RV --> XATTN["Inserted cross-attention layers"]
     LM --> XATTN
-    XATTN --> OUT[Generated tokens]
+    XATTN --> OUT["Generated tokens"]
 ```
 
 #### Why this family matters
@@ -212,15 +212,15 @@ causal decoder.
 
 ```mermaid
 flowchart LR
-    I[Image] --> VE[Vision encoder]
-    VE --> VT[Visual tokens]
-    VT --> P[Projector]
-    P --> ZV[Projected visual tokens]
-    T[Prompt text] --> TOK[Tokenizer]
-    TOK --> XT[Text tokens]
-    ZV --> LLM[Decoder-only LLM]
+    I["Image"] --> VE["Vision encoder"]
+    VE --> VT["Visual tokens"]
+    VT --> P["Projector"]
+    P --> ZV["Projected visual tokens"]
+    T["Prompt text"] --> TOK["Tokenizer"]
+    TOK --> XT["Text tokens"]
+    ZV --> LLM["Decoder-only LLM"]
     XT --> LLM
-    LLM --> OUT[Generated text]
+    LLM --> OUT["Generated text"]
 ```
 
 #### Why it became popular
@@ -282,16 +282,16 @@ where $Q\in\mathbb{R}^{q\times d}$ is a learned query set and $V$ are visual fea
 
 ```mermaid
 flowchart LR
-    I[Image] --> VE[Vision encoder]
-    VE --> VF[Dense visual features]
-    Q[Learned query tokens] --> QF[Q-Former]
+    I["Image"] --> VE["Vision encoder"]
+    VE --> VF["Dense visual features"]
+    Q["Learned query tokens"] --> QF["Q-Former"]
     VF --> QF
-    QF --> CQ[Compressed visual queries]
-    T[Prompt text] --> TOK[Tokenizer]
-    TOK --> XT[Text tokens]
-    CQ --> LLM[Language model]
+    QF --> CQ["Compressed visual queries"]
+    T["Prompt text"] --> TOK["Tokenizer"]
+    TOK --> XT["Text tokens"]
+    CQ --> LLM["Language model"]
     XT --> LLM
-    LLM --> OUT[Generated text]
+    LLM --> OUT["Generated text"]
 ```
 
 #### Complexity
@@ -343,11 +343,11 @@ where $E(\cdot)$ is the encoder memory.
 
 ```mermaid
 flowchart LR
-    I[Image or document] --> ENC[Unified encoder]
-    T[Optional text prompt] --> ENC
-    ENC --> MEM[Encoder memory]
-    MEM --> DEC[Text decoder]
-    DEC --> OUT[Generated text or structure]
+    I["Image or document"] --> ENC["Unified encoder"]
+    T["Optional text prompt"] --> ENC
+    ENC --> MEM["Encoder memory"]
+    MEM --> DEC["Text decoder"]
+    DEC --> OUT["Generated text or structure"]
 ```
 
 #### Complexity

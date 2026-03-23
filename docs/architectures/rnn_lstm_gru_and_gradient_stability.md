@@ -17,11 +17,11 @@ The network is trained by **backpropagation through time (BPTT)**.
 
 ```mermaid
 flowchart LR
-    X1[x_1] --> H1[h_1]
-    X2[x_2] --> H2[h_2]
-    X3[x_3] --> H3[h_3]
-    H1 --> H2 --> H3 --> HT[h_T]
-    HT --> Y[loss]
+    X1["x_1"] --> H1["h_1"]
+    X2["x_2"] --> H2["h_2"]
+    X3["x_3"] --> H3["h_3"]
+    H1 --> H2 --> H3 --> HT["h_T"]
+    HT --> Y["loss"]
 ```
 
 ## 2. Why vanishing and exploding gradients happen
@@ -183,12 +183,12 @@ $$
 
 ```mermaid
 flowchart LR
-    X[x_t] --> GATES[input, forget, output gates]
-    HPREV[h_{t-1}] --> GATES
-    CPREV[c_{t-1}] --> SUM[(cell update)]
+    X["x_t"] --> GATES["input, forget, output gates"]
+    HPREV["h_{"t-1"}"] --> GATES
+    CPREV["c_{"t-1"}"] --> SUM["(cell update)"]
     GATES --> SUM
-    SUM --> C[c_t]
-    C --> H[h_t]
+    SUM --> C["c_t"]
+    C --> H["h_t"]
     GATES --> H
 ```
 
