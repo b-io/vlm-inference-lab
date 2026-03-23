@@ -1,5 +1,5 @@
 import random
-from typing import List, Tuple
+from typing import List
 from vlm_inference_lab.embeddings.utils import EmbeddingUtils
 
 
@@ -33,8 +33,8 @@ def run_vlm_demo():
             ("image_cat.jpg", [x + random.uniform(-0.05, 0.05) for x in text_embedding]),
             ("image_car.jpg", generate_mock_embedding(dim)), ("image_forest.jpg", generate_mock_embedding(dim)), ]
 
-    print(f"--- VLM Cross-Modal Alignment Demo ---")
-    print(f"Concept: Dual-Encoder Retrieval (CLIP-style)")
+    print("--- VLM Cross-Modal Alignment Demo ---")
+    print("Concept: Dual-Encoder Retrieval (CLIP-style)")
     print(f"Query Text: '{query_text}'\n")
     print(f"{'Image Candidate':20} | {'Cosine Similarity':18} | {'Match'}")
     print("-" * 60)

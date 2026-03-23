@@ -1,8 +1,7 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from vlm_inference_lab.experiments.benchmark_serving import main as benchmark_main
 import sys
-import io
 
 
 class TestBenchmarkExits(unittest.TestCase):

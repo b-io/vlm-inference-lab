@@ -142,8 +142,14 @@ See also: [Gradient-boosted trees](gradient_boosted_trees.md).
 ```python
 from sklearn.ensemble import RandomForestClassifier
 
-clf = RandomForestClassifier(n_estimators=300, max_features="sqrt", min_samples_leaf=5, oob_score=True, random_state=0,
-        n_jobs=-1, )
+clf = RandomForestClassifier(
+        n_estimators=300,
+        max_features="sqrt",
+        min_samples_leaf=5,
+        oob_score=True,
+        random_state=0,
+        n_jobs=-1,
+)
 clf.fit(X_train, y_train)
 proba = clf.predict_proba(X_test)
 print(clf.oob_score_)

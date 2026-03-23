@@ -1,7 +1,6 @@
-import time
 import random
 import statistics
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Optional
 
 
@@ -72,7 +71,7 @@ def analyze_results(requests: List[Request]):
     total_time = requests[-1].end_time - requests[0].arrival_time
     throughput = len(requests) / total_time
 
-    print(f"--- Simulation Results ---")
+    print("--- Simulation Results ---")
     print(f"Total Requests: {len(requests)}")
     print(f"Throughput: {throughput:.2f} req/s")
     print(f"Avg Latency: {statistics.mean(latencies):.4f}s")

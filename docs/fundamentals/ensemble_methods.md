@@ -139,8 +139,8 @@ Blending is a simpler relative of stacking:
 2. hold out a validation set
 3. train a small combiner on the validation predictions
 
-It is operationally simpler than full stacking, but it uses data less efficiently because the held-out set is not used for
-base-model fitting.
+It is operationally simpler than full stacking, but it uses data less efficiently because the held-out set is not used
+for base-model fitting.
 
 ## Tree ensembles as a special case
 
@@ -157,10 +157,10 @@ That is why tree ensembles dominate so much classical tabular ML.
 
 ## Bagging vs boosting
 
-| Method   | How models are built | Main effect | Typical base learner | Main risk |
-|----------|----------------------|-------------|----------------------|-----------|
-| Bagging  | Independently        | Variance reduction | Deep trees | Limited gain if models remain highly correlated |
-| Boosting | Sequentially         | Bias reduction + controlled variance | Shallow trees | Overfitting if the ensemble becomes too complex |
+| Method   | How models are built | Main effect                          | Typical base learner | Main risk                                       |
+|----------|----------------------|--------------------------------------|----------------------|-------------------------------------------------|
+| Bagging  | Independently        | Variance reduction                   | Deep trees           | Limited gain if models remain highly correlated |
+| Boosting | Sequentially         | Bias reduction + controlled variance | Shallow trees        | Overfitting if the ensemble becomes too complex |
 
 A simple summary:
 

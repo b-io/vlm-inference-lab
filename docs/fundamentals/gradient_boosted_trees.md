@@ -176,7 +176,8 @@ This is one of the most important practical regularizers.
 ## Classical GBM vs random forest
 
 - **random forest**: trees are trained independently and averaged; variance reduction is the main story
-- **GBM**: trees are trained sequentially to improve the current model; bias reduction plus regularization is the main story
+- **GBM**: trees are trained sequentially to improve the current model; bias reduction plus regularization is the main
+  story
 
 Random forests are usually simpler to tune.
 GBMs are often stronger on tabular prediction tasks when tuned carefully.

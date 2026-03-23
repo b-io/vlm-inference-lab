@@ -8,11 +8,10 @@ import requests
 from datetime import datetime, timezone
 import zoneinfo
 from vlm_inference_lab import get_timezone
-from typing import Any, Dict, List, Optional
 import yaml
 from dataclasses import asdict
 
-from vlm_inference_lab.engines import VllmEngineAdapter, SglangEngineAdapter, ChatMessage, CompletionResult
+from vlm_inference_lab.engines import VllmEngineAdapter, SglangEngineAdapter, ChatMessage
 
 
 async def run_request(adapter, messages, semaphore, **kwargs):
@@ -99,16 +98,22 @@ def main():
     if args.tier:
         if args.tier == "smoke":
             # Smoke: 10 requests, 1 concurrency
-            if args.num_requests == 10: args.num_requests = 10
-            if args.concurrency == 2: args.concurrency = 1
+            if args.num_requests == 10:
+                args.num_requests = 10
+            if args.concurrency == 2:
+                args.concurrency = 1
         elif args.tier == "latency":
             # Latency: 100 requests, 1 concurrency
-            if args.num_requests == 10: args.num_requests = 100
-            if args.concurrency == 2: args.concurrency = 1
+            if args.num_requests == 10:
+                args.num_requests = 100
+            if args.concurrency == 2:
+                args.concurrency = 1
         elif args.tier == "throughput":
             # Throughput: 200 requests, 8 concurrency
-            if args.num_requests == 10: args.num_requests = 200
-            if args.concurrency == 2: args.concurrency = 8
+            if args.num_requests == 10:
+                args.num_requests = 200
+            if args.concurrency == 2:
+                args.concurrency = 8
 
     # Check if an experiment config YAML is provided
     if args.config:
@@ -136,13 +141,13 @@ def main():
         exit(1)
 
     # Run the concurrent benchmark using asyncio
-    print(f"Capturing pre-benchmark metrics...")
+    print("Capturing pre-benchmark metrics...")
     metrics_pre = get_metrics(args.url)
 
     results, total_time = asyncio.run(
             benchmark_concurrency(adapter, args.num_requests, args.concurrency, args.prompt, args.max_tokens))
 
-    print(f"Capturing post-benchmark metrics...")
+    print("Capturing post-benchmark metrics...")
     metrics_post = get_metrics(args.url)
 
     # Summarize individual request results

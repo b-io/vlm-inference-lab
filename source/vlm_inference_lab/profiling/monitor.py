@@ -2,7 +2,7 @@ import time
 import random
 import statistics
 import contextlib
-from typing import List, Optional, Dict
+from typing import List, Dict
 
 
 class PerformanceMonitor:
@@ -28,7 +28,7 @@ class PerformanceMonitor:
 
     def report(self):
         """Prints a performance report with statistics for all recorded metrics."""
-        print(f"--- Performance Report ---")
+        print("--- Performance Report ---")
         for name, values in self.metrics.items():
             # Print statistics for each metric
             print(f"[{name}]")

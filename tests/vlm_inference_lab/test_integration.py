@@ -1,5 +1,4 @@
 import unittest
-import statistics
 from vlm_inference_lab.simulation.inference_simulator import InferenceSimulator, SimulationConfig
 from vlm_inference_lab.batching.dynamic_batcher import DynamicBatcher
 
@@ -29,7 +28,7 @@ class TestInferenceIntegration(unittest.TestCase):
                                   # Very slow GPU
                                   )
         sim = InferenceSimulator(config)
-        results = sim.run()
+        sim.run()
 
         # Check that we didn't just process 200 individual batches
         # (With max_batch_size=10, we expect around 20 batches)
@@ -46,7 +45,7 @@ class TestInferenceIntegration(unittest.TestCase):
             self.assertEqual(results["total_requests"], 0)
         except IndexError:
             self.fail("Simulation failed on empty request list")
-        except Exception as e:
+        except Exception:
             # We'll fix any errors found here
             pass
 

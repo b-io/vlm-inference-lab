@@ -88,7 +88,8 @@ This path is intentional: read [decision trees](fundamentals/decision_trees.md) 
 
 - [Activation functions](fundamentals/activation_functions.md)
 - [Decision trees](fundamentals/decision_trees.md)
-- [Ensemble methods](fundamentals/ensemble_methods.md) *(umbrella theory for random forests, boosting, stacking, and voting ensembles)*
+- [Ensemble methods](fundamentals/ensemble_methods.md)
+  *(umbrella theory for random forests, boosting, stacking, and voting ensembles)*
 - [Feature engineering and representations](fundamentals/feature_engineering_and_representations.md)
 - [Gradient-boosted trees](fundamentals/gradient_boosted_trees.md)
 - [Linear models and losses](fundamentals/linear_models_and_losses.md)

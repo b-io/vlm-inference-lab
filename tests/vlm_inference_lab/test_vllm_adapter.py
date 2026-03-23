@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from vlm_inference_lab.engines.vllm import VllmEngineAdapter
-from vlm_inference_lab.engines.base import ChatMessage, CompletionResult
+from vlm_inference_lab.engines.base import ChatMessage
 
 
 class TestVllmEngineAdapterHeuristic(unittest.TestCase):

@@ -28,7 +28,8 @@ Examples:
 - a shallow tree often has higher bias
 - a deep unconstrained tree often has higher variance
 - a random forest often lowers variance relative to one tree
-- a boosted tree ensemble often lowers bias relative to one shallow tree while controlling variance through regularization
+- a boosted tree ensemble often lowers bias relative to one shallow tree while controlling variance through
+  regularization
 
 ## Why bagging can improve generalization
 

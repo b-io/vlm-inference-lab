@@ -1,7 +1,6 @@
-import time
 import random
 import statistics
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 from vlm_inference_lab.simulation.arrival import Request, ArrivalSimulator
 from vlm_inference_lab.batching.dynamic_batcher import DynamicBatcher
@@ -159,7 +158,7 @@ if __name__ == "__main__":
     sim = InferenceSimulator(config)
     stats = sim.run()
 
-    print(f"--- Inference Simulation Results ---")
+    print("--- Inference Simulation Results ---")
     print(f"Configuration: Arrival Rate={config.arrival_rate} req/s, Max Batch={config.max_batch_size}")
     for k, v in stats.items():
         print(f"{k:20}: {v:.4f}")

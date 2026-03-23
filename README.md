@@ -166,10 +166,10 @@ eduction.exe
 - ✅ **Technical Docs**: Organized notes on architectures, serving, systems, optimization, and multimodal modeling.
 - ✅ **Remote Orchestration**: Production-ready Runpod/vLLM benchmark wrappers.
 - ✅ **Reference Docs**:
-  - [Documentation map](docs/README.md)
-  - [Tree-based ML path: decision trees → ensemble methods → random forests → gradient-boosted trees](docs/fundamentals/ensemble_methods.md)
-  - [Neural architecture tradeoffs](docs/architectures/neural_architecture_tradeoffs.md)
-  - [RNN gradient stability](docs/architectures/rnn_lstm_gru_and_gradient_stability.md)
-  - [VLM architectures](docs/multimodal/vlm_architectures_and_basics.md)
-  - [Document understanding](docs/multimodal/document_understanding.md)
-  - [Serving optimizations](docs/serving/advanced_serving_features.md)
+    - [Documentation map](docs/README.md)
+    - [Tree-based ML path: decision trees → ensemble methods → random forests → gradient-boosted trees](docs/fundamentals/ensemble_methods.md)
+    - [Neural architecture tradeoffs](docs/architectures/neural_architecture_tradeoffs.md)
+    - [RNN gradient stability](docs/architectures/rnn_lstm_gru_and_gradient_stability.md)
+    - [VLM architectures](docs/multimodal/vlm_architectures_and_basics.md)
+    - [Document understanding](docs/multimodal/document_understanding.md)
+    - [Serving optimizations](docs/serving/advanced_serving_features.md)
