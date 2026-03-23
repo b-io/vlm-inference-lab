@@ -986,7 +986,8 @@ These answer: **Can I read and extract structured information from pages?**
 - Fuyu-like models
 - newer single-transformer, early-fusion decoder designs
 
-These answer: **Can I handle vision and language with one autoregressive backbone and minimal modality-specific stacks?**
+These answer:
+**Can I handle vision and language with one autoregressive backbone and minimal modality-specific stacks?**
 
 ---
 
@@ -1099,21 +1100,21 @@ Think of these as **native multimodal autoregressive decoders**.
 
 ## 7. Architecture choice by product goal
 
-| Product goal                         | Usually start with                                  | Why                                                                |
-|--------------------------------------|-----------------------------------------------------|--------------------------------------------------------------------|
-| image-text retrieval                 | CLIP or SigLIP                                      | shared embedding space and offline indexing                        |
-| zero-shot labeling                   | CLIP or SigLIP                                      | promptable label space                                             |
-| multimodal classification            | single-stream or two-stream fusion encoder          | stronger token-level multimodal interaction                        |
-| VQA on fixed image-question pairs    | fusion encoder or encoder-decoder VLM               | joint reasoning matters more than retrieval                        |
-| referring expression comprehension   | grounding-native model or strong fusion encoder     | output is fundamentally spatial                                    |
-| phrase grounding                     | grounding-native model                              | direct region prediction or alignment                              |
-| multimodal assistant                 | LLaVA-style projector + LLM                         | strong conversational interface                                    |
-| few-shot interleaved prompting       | Flamingo-style cross-attention                      | better support for mixed image-text context                        |
-| parameter-efficient multimodal build | BLIP-2 or Q-Former bridge                           | compact trainable bridge                                           |
-| screenshot or document generation    | Pix2Struct or another encoder-decoder               | output is naturally text or structure                              |
-| strict extraction over documents     | LayoutLM-style or Donut/Pix2Struct document models  | layout, OCR, and high-resolution constraints dominate architecture |
-| grounded text + localization         | Kosmos-2-style or box-generating grounded MLLM      | need language plus region references                               |
-| simplest unified research baseline   | Fuyu-style native decoder                           | architectural simplicity                                           |
+| Product goal                         | Usually start with                                 | Why                                                                |
+|--------------------------------------|----------------------------------------------------|--------------------------------------------------------------------|
+| image-text retrieval                 | CLIP or SigLIP                                     | shared embedding space and offline indexing                        |
+| zero-shot labeling                   | CLIP or SigLIP                                     | promptable label space                                             |
+| multimodal classification            | single-stream or two-stream fusion encoder         | stronger token-level multimodal interaction                        |
+| VQA on fixed image-question pairs    | fusion encoder or encoder-decoder VLM              | joint reasoning matters more than retrieval                        |
+| referring expression comprehension   | grounding-native model or strong fusion encoder    | output is fundamentally spatial                                    |
+| phrase grounding                     | grounding-native model                             | direct region prediction or alignment                              |
+| multimodal assistant                 | LLaVA-style projector + LLM                        | strong conversational interface                                    |
+| few-shot interleaved prompting       | Flamingo-style cross-attention                     | better support for mixed image-text context                        |
+| parameter-efficient multimodal build | BLIP-2 or Q-Former bridge                          | compact trainable bridge                                           |
+| screenshot or document generation    | Pix2Struct or another encoder-decoder              | output is naturally text or structure                              |
+| strict extraction over documents     | LayoutLM-style or Donut/Pix2Struct document models | layout, OCR, and high-resolution constraints dominate architecture |
+| grounded text + localization         | Kosmos-2-style or box-generating grounded MLLM     | need language plus region references                               |
+| simplest unified research baseline   | Fuyu-style native decoder                          | architectural simplicity                                           |
 
 ---
 
@@ -1121,19 +1122,19 @@ Think of these as **native multimodal autoregressive decoders**.
 
 The table below focuses on dominant sequence terms and omits constants.
 
-| Family                              | Prefill complexity                                      | Decode-side intuition                                   | Main memory pressure                   |
-|-------------------------------------|---------------------------------------------------------|---------------------------------------------------------|----------------------------------------|
-| CLIP or SigLIP                      | $O(N_v^2 d) + O(N_t^2 d)$                               | usually no autoregressive decode                        | encoder activations or embedding index |
-| Single-stream fusion encoder        | $O((N_v+N_t)^2 d)$                                      | usually encoder-only or shallow decoder/task head       | fused encoder activations              |
-| Two-stream fusion encoder           | $O(N_v^2 d)+O(N_t^2 d)+O(N_vN_t d)$                     | encoder-side joint reasoning                            | both streams plus fusion states        |
-| Grounding-native detector/fusion    | $O(R^2 d)+O(N_t^2 d)+O(RN_t d)$ plus backbone cost      | output often boxes/masks, not long text                 | region/query states                    |
-| Flamingo                            | $O(N_v^2 d) + O(q N_v d) + O(N_t q d)$                  | per generated token still attends to visual memory      | LM KV cache plus visual memory         |
-| LLaVA-style                         | $O(N_v^2 d_v) + O((N_v+N_t)^2 d)$                       | decode cost grows with retained multimodal prefix       | large decoder KV cache                 |
-| BLIP-2-style                        | $O(N_v^2 d_v) + O(q N_v d) + O((q+N_t)^2 d)$            | shorter multimodal prefix than projector-only           | smaller decoder context, bridge states |
-| Pix2Struct / PaLI / OFA / Donut     | $O((N_v+N_t)^2 d) + O(N_y(N_v+N_t)d + N_y^2 d)$         | encoder-decoder generation                              | encoder memory plus decoder cache      |
-| LayoutLM-style document encoder     | depends on OCR token count and layout fusion            | usually encoder-side extraction/classification          | token/layout states                    |
-| Grounded generative MLLM            | similar to bridge-to-LLM families, plus region outputs  | decode emits text and possibly box/location tokens      | decoder cache plus grounding outputs   |
-| Fuyu-style unified decoder          | roughly $O((N_v+N_t)^2 d)$ in the decoder itself        | image token count directly impacts autoregressive stack | very large decoder context             |
+| Family                           | Prefill complexity                                     | Decode-side intuition                                   | Main memory pressure                   |
+|----------------------------------|--------------------------------------------------------|---------------------------------------------------------|----------------------------------------|
+| CLIP or SigLIP                   | $O(N_v^2 d) + O(N_t^2 d)$                              | usually no autoregressive decode                        | encoder activations or embedding index |
+| Single-stream fusion encoder     | $O((N_v+N_t)^2 d)$                                     | usually encoder-only or shallow decoder/task head       | fused encoder activations              |
+| Two-stream fusion encoder        | $O(N_v^2 d)+O(N_t^2 d)+O(N_vN_t d)$                    | encoder-side joint reasoning                            | both streams plus fusion states        |
+| Grounding-native detector/fusion | $O(R^2 d)+O(N_t^2 d)+O(RN_t d)$ plus backbone cost     | output often boxes/masks, not long text                 | region/query states                    |
+| Flamingo                         | $O(N_v^2 d) + O(q N_v d) + O(N_t q d)$                 | per generated token still attends to visual memory      | LM KV cache plus visual memory         |
+| LLaVA-style                      | $O(N_v^2 d_v) + O((N_v+N_t)^2 d)$                      | decode cost grows with retained multimodal prefix       | large decoder KV cache                 |
+| BLIP-2-style                     | $O(N_v^2 d_v) + O(q N_v d) + O((q+N_t)^2 d)$           | shorter multimodal prefix than projector-only           | smaller decoder context, bridge states |
+| Pix2Struct / PaLI / OFA / Donut  | $O((N_v+N_t)^2 d) + O(N_y(N_v+N_t)d + N_y^2 d)$        | encoder-decoder generation                              | encoder memory plus decoder cache      |
+| LayoutLM-style document encoder  | depends on OCR token count and layout fusion           | usually encoder-side extraction/classification          | token/layout states                    |
+| Grounded generative MLLM         | similar to bridge-to-LLM families, plus region outputs | decode emits text and possibly box/location tokens      | decoder cache plus grounding outputs   |
+| Fuyu-style unified decoder       | roughly $O((N_v+N_t)^2 d)$ in the decoder itself       | image token count directly impacts autoregressive stack | very large decoder context             |
 
 ---
 
@@ -1235,31 +1236,31 @@ scores = grounding_head(fused)
 The main missing architecture families were:
 
 1. **Single-stream fusion encoders**
-   - VisualBERT
-   - UNITER
-   - ViLT
-   - VL-BERT
+    - VisualBERT
+    - UNITER
+    - ViLT
+    - VL-BERT
 
 2. **Two-stream / co-attention fusion encoders**
-   - ViLBERT
-   - LXMERT
+    - ViLBERT
+    - LXMERT
 
 3. **Grounding-native detector / box-predicting models**
-   - MDETR
-   - GLIP-style text-conditioned grounding
+    - MDETR
+    - GLIP-style text-conditioned grounding
 
 4. **Document-specialized OCR-based layout models**
-   - LayoutLM family
+    - LayoutLM family
 
 5. **OCR-free document-specialized parsers as a distinct subfamily**
-   - Donut
-   - document-oriented Pix2Struct-like systems
+    - Donut
+    - document-oriented Pix2Struct-like systems
 
 6. **Grounded generative MLLMs**
-   - Kosmos-2 and related models
+    - Kosmos-2 and related models
 
 7. **Native unified decoder-only multimodal models**
-   - Fuyu-style systems
+    - Fuyu-style systems
 
 A complete taxonomy should include not only assistant-oriented multimodal models, but also historically important
 **fusion-encoder** families and task-critical **grounding** and **document-specialized** families.
@@ -1292,7 +1293,8 @@ A short accurate label is:
 - **VLM** is the umbrella term; **MLLM/LVLM** is usually the generative subfamily.
 - CLIP and SigLIP are **retrieval-first VLMs**.
 - VisualBERT, UNITER, ViLT, ViLBERT, and LXMERT are **fusion-encoder VLMs**.
-- The architecture “vision encoder + text encoder + cross-attention + transformer” is a **two-stream fusion-encoder VLM**.
+- The architecture “vision encoder + text encoder + cross-attention + transformer” is a
+  **two-stream fusion-encoder VLM**.
 - MDETR-style systems are **grounding-native VLMs** and are especially relevant for **REC**.
 - Flamingo is a **cross-attention bridge** for interleaved multimodal prompting.
 - BLIP-2 uses a **query bottleneck** to connect frozen backbones efficiently.
