@@ -10,7 +10,13 @@ structure of the data and the production constraints.
 Choose the architecture whose assumptions best match the problem:
 
 $$
-\text{best architecture} \approx \arg\max_{f \in \mathcal{F}} \big(\text{task fit} + \text{data fit} + \text{systems fit} - \text{cost}\big).
+\begin{aligned}
+\text{best architecture}
+&\approx \arg\max_{f \in \mathcal{F}} \big(
+    \text{task fit} + \text{data fit} \\
+&\quad + \text{systems fit} - \text{cost}
+\big).
+\end{aligned}
 $$
 
 Here, "systems fit" means latency, memory, throughput, parallelism, and deployability.
@@ -270,7 +276,11 @@ $$
 A VAE adds a probabilistic latent space with ELBO objective:
 
 $$
-\mathcal{L}_{\text{VAE}} = \mathbb{E}_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)] - D_{\mathrm{KL}}\big(q_\phi(z\mid x)\,\|\,p(z)\big).
+\begin{aligned}
+\mathcal{L}_{\text{VAE}}
+&= \mathbb{E}_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)] \\
+&\quad - D_{\mathrm{KL}}\big(q_\phi(z\mid x)\,\|\,p(z)\big).
+\end{aligned}
 $$
 
 ### Why they matter

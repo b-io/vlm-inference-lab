@@ -28,7 +28,14 @@ This tells us how cost grows as the problem size grows.
 Actual latency is closer to
 
 $$
-T \approx \max\left(\frac{\text{FLOPs}}{\text{peak compute}}, \frac{\text{bytes moved}}{\text{memory bandwidth}}\right) + \text{overheads}.
+\begin{aligned}
+T
+&\approx \max\left(
+    \frac{\text{FLOPs}}{\text{peak compute}},
+    \frac{\text{bytes moved}}{\text{memory bandwidth}}
+\right)
+ + \text{overheads}.
+\end{aligned}
 $$
 
 This is roofline-style reasoning:

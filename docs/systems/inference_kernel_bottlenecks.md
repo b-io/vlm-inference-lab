@@ -21,7 +21,14 @@ decent.
 A rough latency model for an operator is
 
 $$
-T \approx \max\left(\frac{\text{FLOPs}}{\text{peak compute}}, \frac{\text{Bytes}}{\text{memory bandwidth}}\right) + T_{\text{overhead}}.
+\begin{aligned}
+T
+&\approx \max\left(
+    \frac{\text{FLOPs}}{\text{peak compute}},
+    \frac{\text{Bytes}}{\text{memory bandwidth}}
+\right)
+ + T_{\text{overhead}}.
+\end{aligned}
 $$
 
 ## 3. Which operators usually matter in serving

@@ -14,7 +14,15 @@ The KV cache grows linearly with **Batch Size** and **Sequence Length**. For lon
 high-resolution visual reasoning, the KV cache can easily exceed the size of the model weights.
 
 **Memory Footprint Calculation**:
-$2 \times \text{layers} \times \text{hidden size} \times \text{seq length} \times \text{batch size} \times \text{precision (bytes)}$
+
+$$
+\begin{aligned}
+\text{KV bytes}
+&\approx 2 \times \text{layers} \times \text{hidden size} \\
+&\quad \times \text{seq length} \times \text{batch size}
+    \times \text{precision (bytes)}.
+\end{aligned}
+$$
 
 ## Architecture Optimization
 

@@ -94,7 +94,13 @@ bytes moved per token step, which can improve throughput.
 A useful mental model is:
 
 $$
-\text{time per token} \approx \max\left(\frac{\text{FLOPs}}{\text{compute rate}}, \frac{\text{Bytes}}{\text{bandwidth}}\right).
+\begin{aligned}
+\text{time per token}
+&\approx \max\left(
+    \frac{\text{FLOPs}}{\text{compute rate}},
+    \frac{\text{Bytes}}{\text{bandwidth}}
+\right).
+\end{aligned}
 $$
 
 Quantization primarily reduces the second term.

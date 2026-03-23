@@ -37,13 +37,13 @@ $$
 The standard KD loss is
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{KD}}
-=
-\alpha \, \mathcal{L}_{\mathrm{task}}\!\left(y, p^{(s)}(1)\right)
-
-+
-
-(1-\alpha) T^2 \, \mathrm{KL}\!\left(p^{(t)}(T) \;\|\; p^{(s)}(T)\right).
+&= \alpha \, \mathcal{L}_{\mathrm{task}}\!\left(y, p^{(s)}(1)\right) \\
+&\quad + (1-\alpha) T^2 \, \mathrm{KL}\!\left(
+    p^{(t)}(T) \,\|\, p^{(s)}(T)
+\right).
+\end{aligned}
 $$
 
 For classification,
@@ -109,18 +109,13 @@ $$
 Numerically,
 
 $$
+\begin{aligned}
 \mathrm{KL}(t \| s)
-\approx
-0.8668\ln\!\left(\frac{0.8668}{0.8236}\right)
-
-+
-
-0.1173\ln\!\left(\frac{0.1173}{0.1653}\right)
-
-+
-
-0.0159\ln\!\left(\frac{0.0159}{0.0101}\right)
-\approx 0.0105.
+&\approx 0.8668\ln\!\left(\frac{0.8668}{0.8236}\right)
+    + 0.1173\ln\!\left(\frac{0.1173}{0.1653}\right) \\
+&\quad + 0.0159\ln\!\left(\frac{0.0159}{0.0101}\right)
+    \approx 0.0105.
+\end{aligned}
 $$
 
 If the correct class is the first class, then the label-based cross-entropy term in the same toy example is
@@ -169,7 +164,11 @@ For VLMs, distillation often goes beyond final logits. The student may match:
 A simple feature-matching term is
 
 $$
-\mathcal{L}_{\mathrm{feat}} = \sum_{\ell \in \mathcal{S}} w_\ell \, \lVert h_\ell^{(t)} - P_\ell\!\left(h_\ell^{(s)}\right) \rVert_2^2,
+\begin{aligned}
+\mathcal{L}_{\mathrm{feat}}
+&= \sum_{\ell \in \mathcal{S}} w_\ell \,
+    \left\lVert h_\ell^{(t)} - P_\ell\!\left(h_\ell^{(s)}\right) \right\rVert_2^2.
+\end{aligned}
 $$
 
 where $P_\ell$ projects the student into the teacher space when dimensions differ.
@@ -199,21 +198,13 @@ A VLM may be distilled at multiple levels:
 A multi-part objective can look like:
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{VLM}}
-=
-\lambda_1 \mathcal{L}_{\mathrm{text}}
-
-+
-
-\lambda_2 \mathcal{L}_{\mathrm{vision}}
-
-+
-
-\lambda_3 \mathcal{L}_{\mathrm{align}}
-
-+
-
-\lambda_4 \mathcal{L}_{\mathrm{KD}}.
+&= \lambda_1 \mathcal{L}_{\mathrm{text}}
+ + \lambda_2 \mathcal{L}_{\mathrm{vision}} \\
+&\quad + \lambda_3 \mathcal{L}_{\mathrm{align}}
+ + \lambda_4 \mathcal{L}_{\mathrm{KD}}.
+\end{aligned}
 $$
 
 ## 10. Diagram: multi-level VLM distillation
